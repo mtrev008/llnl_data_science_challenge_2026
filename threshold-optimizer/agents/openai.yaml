@@ -1,0 +1,4 @@
+interface:
+  display_name: "Threshold Optimizer"
+  short_description: "Compare CT segmentation thresholds side by side"
+  default_prompt: "Use $threshold-optimizer to segment a CT dataset at several thresholds and compare the saved masks."
