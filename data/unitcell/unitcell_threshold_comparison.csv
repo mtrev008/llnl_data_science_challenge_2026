@@ -1,0 +1,4 @@
+input_path,output_path,threshold,shape,dtype,foreground_voxels,total_voxels,foreground_fraction,method
+data/unitcell/unitcell.npy,data/unitcell/unitcell_mask_threshold_0.003.npy,0.003,256x256x256,uint8,780596,16777216,0.04652714729309082,local_numpy_fallback
+data/unitcell/unitcell.npy,data/unitcell/unitcell_mask_threshold_0.007.npy,0.007,256x256x256,uint8,712688,16777216,0.042479515075683594,local_numpy_fallback
+data/unitcell/unitcell.npy,data/unitcell/unitcell_mask_threshold_0.01.npy,0.01,256x256x256,uint8,622182,16777216,0.03708493709564209,local_numpy_fallback

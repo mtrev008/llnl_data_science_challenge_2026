@@ -1,0 +1,24 @@
+{
+  "dataset": "data/unitcell/unitcell.npy",
+  "mask": "data/unitcell/unitcell_segmented_otsu.npz",
+  "skeleton": "data/unitcell/unitcell_skeleton.npz",
+  "shape": [
+    256,
+    256,
+    256
+  ],
+  "total_voxels": 16777216,
+  "threshold": 0.00586471613496542,
+  "mean_intensity_all": 0.0005390672013163567,
+  "mean_intensity_roi": 0.011696627363562584,
+  "std_intensity_roi": 0.001408131094649434,
+  "min_intensity_roi": 0.005865040700882673,
+  "max_intensity_roi": 0.015257691964507103,
+  "mask_voxels": 717733,
+  "mask_fraction": 0.04278022050857544,
+  "skeleton_voxels": 3184,
+  "skeleton_to_mask_fraction": 0.004436190059534674,
+  "endpoints": 40,
+  "branchpoints": 22,
+  "skeleton_inside_mask": true
+}
