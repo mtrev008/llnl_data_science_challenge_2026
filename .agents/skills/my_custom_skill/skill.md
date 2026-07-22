@@ -10,7 +10,7 @@ Use the `segment_ct_dataset()` MCP tool to segment one CT dataset at multiple th
 ## Procedure
 
 1. Obtain the input `.npy` filepath from the user and confirm that it exists.
-2. Use the user's threshold values. If none are provided, use `0.003`, `0.005`, and `0.007`.
+2. Use the user's threshold values. If none are provided, use `0.0001`, `0.001`, `0.0015`, `0.002`, `0.003`, `0.005`, `0,006`, and `0.007`.
 3. For each threshold, create a unique output filename in this format:
 
    ```text
@@ -29,6 +29,26 @@ Given an input file named `/data/unitcell.npy`, make these separate calls:
 ```text
 segment_ct_dataset(
     input_filepath="/data/unitcell.npy",
+    output_filepath="/data/unitcell_threshold_0p7.npy",
+    threshold=0.0001
+)
+segment_ct_dataset(
+    input_filepath="/data/unitcell.npy",
+    output_filepath="/data/unitcell_threshold_0p7.npy",
+    threshold=0.001
+)
+segment_ct_dataset(
+    input_filepath="/data/unitcell.npy",
+    output_filepath="/data/unitcell_threshold_0p7.npy",
+    threshold=0.0015
+)
+segment_ct_dataset(
+    input_filepath="/data/unitcell.npy",
+    output_filepath="/data/unitcell_threshold_0p7.npy",
+    threshold=0.002
+)
+segment_ct_dataset(
+    input_filepath="/data/unitcell.npy",
     output_filepath="/data/unitcell_threshold_0p3.npy",
     threshold=0.003
 )
@@ -37,6 +57,11 @@ segment_ct_dataset(
     input_filepath="/data/unitcell.npy",
     output_filepath="/data/unitcell_threshold_0p5.npy",
     threshold=0.005
+)
+segment_ct_dataset(
+    input_filepath="/data/unitcell.npy",
+    output_filepath="/data/unitcell_threshold_0p7.npy",
+    threshold=0.006
 )
 
 segment_ct_dataset(

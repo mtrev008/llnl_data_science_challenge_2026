@@ -172,3 +172,7 @@ ehthumbs.db
 Thumbs.db
 
 result
+
+# Large CT volumes and masks
+*.tif
+*.tiff

@@ -1,4 +1,5 @@
 from fastmcp import FastMCP
+import numpy as np
 
 # Initialize the MCP server
 mcp = FastMCP("CT Segmentation")
@@ -16,7 +17,17 @@ def segment_ct_dataset(input_filepath: str, output_filepath: str, threshold: flo
     Returns:
         A status message indicating success and the save location, or an error message.
     """
-    pass # Implementation goes here
+    try:
+        volume = np.load(input_filepath)
+        mask = volume >= threshold
+        np.save(output_filepath, mask)
+
+        return (
+            f"Segmentation completed with threshold {threshold}. "
+            f"Saved mask to {output_filepath}"
+        )
+    except Exception as error:
+        return f"Segmentation failed: {error}"
 
 @mcp.tool()
 def visualize_slice(input_filepath: str, output_filepath: str, slice_index: int, axis: int = 0) -> str:
@@ -51,3 +62,4 @@ def skeletonize(input_filepath: str, output_filepath: str) -> str:
 if __name__ == "__main__":
     # Run the FastMCP server, exposing the tools over standard I/O (default)
     mcp.run()
+
