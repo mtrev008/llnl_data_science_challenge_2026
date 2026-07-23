@@ -1,438 +1,288 @@
 #!/usr/bin/env python3
-"""Identify likely breaks in a segmented lattice using its 3-D skeleton.
-
-The detector finds skeleton endpoints, removes endpoints that naturally occur on
-the exterior of the lattice, pairs nearby internal endpoints that face a common
-gap, and confirms that the line between them is predominantly background in the
-segmented mask. Unpaired internal endpoints are reported as possible missing or
-broken struts. A completely absent strut that leaves no skeleton trace cannot be
-confirmed without a CAD/reference model.
-"""
-
-from __future__ import annotations
+"""Build an observed lattice JSON and compare it with a registered design JSON."""
 
 import argparse
+from collections import Counter
+import json
 from pathlib import Path
-from typing import Any
 
 import numpy as np
-from scipy import ndimage as ndi
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
 from scipy.spatial import cKDTree
 import tifffile
 
 
-NEIGHBORHOOD_26 = np.ones((3, 3, 3), dtype=np.uint8)
-NEIGHBORHOOD_26[1, 1, 1] = 0
+def load_volume(path):
+    if Path(path).suffix.lower() == ".npy":
+        return np.load(path, mmap_mode="r", allow_pickle=False)
+    return tifffile.memmap(path)
 
 
-def load_volume(path: Path, *, skeleton: bool = False) -> np.ndarray:
-    """Memory-map a 3-D NPY or TIFF volume and validate its shape."""
-    suffix = path.suffix.lower()
-    if suffix == ".npy":
-        volume = np.load(path, mmap_mode="r", allow_pickle=False)
-    elif suffix in {".tif", ".tiff"}:
-        try:
-            volume = tifffile.memmap(path)
-        except ValueError:
-            volume = tifffile.imread(path)
-    else:
-        raise ValueError(f"{path} must be a .npy, .tif, or .tiff file")
-    if volume.ndim != 3:
-        raise ValueError(f"expected a 3-D volume at {path}, got {volume.shape}")
-    return volume
-
-
-def foreground_bounds(volume: np.ndarray, chunk_depth: int) -> tuple[np.ndarray, np.ndarray]:
-    """Return inclusive foreground bounds without materializing the full volume."""
-    lower = np.asarray(volume.shape, dtype=int)
-    upper = np.full(3, -1, dtype=int)
-    for start in range(0, volume.shape[0], chunk_depth):
-        stop = min(start + chunk_depth, volume.shape[0])
-        block = np.asarray(volume[start:stop]) > 0
-        points = np.argwhere(block)
-        if points.size == 0:
-            continue
-        points[:, 0] += start
-        lower = np.minimum(lower, points.min(axis=0))
-        upper = np.maximum(upper, points.max(axis=0))
-    if np.any(upper < 0):
-        raise ValueError("the skeleton contains no foreground voxels")
-    return lower, upper
-
-
-def find_endpoints(skeleton: np.ndarray, chunk_depth: int) -> np.ndarray:
-    """Find 26-connected skeleton voxels having exactly one neighbor."""
-    endpoints: list[np.ndarray] = []
-    depth = skeleton.shape[0]
-    for start in range(0, depth, chunk_depth):
-        stop = min(start + chunk_depth, depth)
-        halo_start = max(0, start - 1)
-        halo_stop = min(depth, stop + 1)
-        block = np.asarray(skeleton[halo_start:halo_stop]) > 0
-        neighbors = ndi.convolve(
-            block.astype(np.uint8), NEIGHBORHOOD_26, mode="constant", cval=0
-        )
-        core_start = start - halo_start
-        core_stop = core_start + (stop - start)
-        core = block[core_start:core_stop]
-        coords = np.argwhere(core & (neighbors[core_start:core_stop] == 1))
-        if coords.size:
-            coords[:, 0] += start
-            endpoints.append(coords)
-    return np.vstack(endpoints) if endpoints else np.empty((0, 3), dtype=int)
-
-
-def internal_endpoints(
-    endpoints: np.ndarray,
-    lower: np.ndarray,
-    upper: np.ndarray,
-    boundary_margin: int,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Split endpoints into internal and natural exterior-boundary endpoints."""
-    exterior = np.any(
-        (endpoints <= lower + boundary_margin)
-        | (endpoints >= upper - boundary_margin),
-        axis=1,
+def observed_graph(segmentation, skeleton):
+    skeleton_points = np.argwhere((np.asarray(skeleton) > 0) & (segmentation > 0))
+    pairs = cKDTree(skeleton_points).query_pairs(
+        np.sqrt(3) + 1e-6, output_type="ndarray"
     )
-    return endpoints[~exterior], endpoints[exterior]
+    rows = np.concatenate((pairs[:, 0], pairs[:, 1]))
+    columns = np.concatenate((pairs[:, 1], pairs[:, 0]))
+    graph = coo_matrix(
+        (np.ones(len(rows), dtype=np.uint8), (rows, columns)),
+        shape=(len(skeleton_points), len(skeleton_points)),
+    ).tocsr()
 
+    node_voxels = np.flatnonzero(np.diff(graph.indptr) != 2)
+    node_graph = graph[node_voxels][:, node_voxels]
+    node_count, node_labels = connected_components(node_graph, directed=False)
+    voxel_node = np.full(len(skeleton_points), -1, dtype=np.int32)
+    voxel_node[node_voxels] = node_labels
 
-def sample_line(start: np.ndarray, end: np.ndarray) -> tuple[np.ndarray, float]:
-    """Return rounded voxel coordinates sampled at roughly one-voxel spacing."""
-    distance = float(np.linalg.norm(end - start))
-    count = max(2, int(np.ceil(distance)) + 1)
-    points = np.rint(np.linspace(start, end, count)).astype(int)
-    points = np.unique(points, axis=0)
-    return points, distance
-
-
-def gap_metrics(
-    segmentation: np.ndarray,
-    start: np.ndarray,
-    end: np.ndarray,
-    endpoint_trim: int,
-) -> dict[str, float]:
-    """Measure empty material along the candidate endpoint-to-endpoint gap."""
-    line, endpoint_distance = sample_line(start, end)
-    trim = min(endpoint_trim, max(0, (len(line) - 1) // 3))
-    interior = line[trim : len(line) - trim] if trim else line
-    values = np.asarray(
-        segmentation[interior[:, 0], interior[:, 1], interior[:, 2]]
-    ) > 0
-    empty = ~values
-    empty_fraction = float(empty.mean()) if len(empty) else 0.0
-
-    longest = current = 0
-    for is_empty in empty:
-        current = current + 1 if is_empty else 0
-        longest = max(longest, current)
-    spacing = endpoint_distance / max(len(line) - 1, 1)
-    return {
-        "endpoint_distance_voxels": endpoint_distance,
-        "estimated_empty_gap_voxels": float(longest * spacing),
-        "empty_fraction": empty_fraction,
-    }
-
-
-def candidate_pairs(endpoints: np.ndarray, maximum_distance: float) -> list[tuple[int, int, float]]:
-    """Return candidate endpoint pairs ordered from nearest to farthest."""
-    if len(endpoints) < 2:
-        return []
-    tree = cKDTree(endpoints)
-    pairs = []
-    for first, second in tree.query_pairs(maximum_distance):
-        distance = float(np.linalg.norm(endpoints[first] - endpoints[second]))
-        pairs.append((first, second, distance))
-    return sorted(pairs, key=lambda item: item[2])
-
-
-def outward_direction(skeleton: np.ndarray, endpoint: np.ndarray) -> np.ndarray:
-    """Estimate the direction in which a broken strut would leave an endpoint."""
-    shape = np.asarray(skeleton.shape)
-    neighbors: list[np.ndarray] = []
-    for offset in np.ndindex(3, 3, 3):
-        delta = np.asarray(offset, dtype=int) - 1
-        if np.all(delta == 0):
-            continue
-        position = endpoint + delta
-        if np.all(position >= 0) and np.all(position < shape):
-            if skeleton[tuple(position)] > 0:
-                neighbors.append(position)
-    if len(neighbors) != 1:
-        return np.zeros(3, dtype=float)
-    direction = endpoint.astype(float) - neighbors[0]
-    return direction / np.linalg.norm(direction)
-
-
-def endpoints_face_gap(
-    skeleton: np.ndarray,
-    first: np.ndarray,
-    second: np.ndarray,
-    minimum_cosine: float,
-) -> bool:
-    """Check that both endpoint tangents point toward the proposed gap."""
-    separation = second.astype(float) - first
-    unit = separation / np.linalg.norm(separation)
-    first_outward = outward_direction(skeleton, first)
-    second_outward = outward_direction(skeleton, second)
-    return bool(
-        np.dot(first_outward, unit) >= minimum_cosine
-        and np.dot(second_outward, -unit) >= minimum_cosine
-    )
-
-
-def analyze(
-    segmentation: np.ndarray,
-    skeleton: np.ndarray,
-    *,
-    boundary_margin: int = 12,
-    maximum_gap: float = 30.0,
-    minimum_empty_fraction: float = 0.70,
-    minimum_facing_cosine: float = 0.50,
-    endpoint_trim: int = 2,
-    chunk_depth: int = 32,
-) -> dict[str, Any]:
-    """Analyze matching segmentation and skeleton volumes."""
-    if segmentation.shape != skeleton.shape:
-        raise ValueError(
-            "segmentation and skeleton shapes differ: "
-            f"{segmentation.shape} versus {skeleton.shape}"
-        )
-    if (
-        boundary_margin < 0
-        or maximum_gap <= 0
-        or not 0 <= minimum_empty_fraction <= 1
-        or not -1 <= minimum_facing_cosine <= 1
-    ):
-        raise ValueError("invalid detection parameters")
-
-    lower, upper = foreground_bounds(skeleton, chunk_depth)
-    all_endpoints = find_endpoints(skeleton, chunk_depth)
-    internal, exterior = internal_endpoints(
-        all_endpoints, lower, upper, boundary_margin
-    )
-
-    used: set[int] = set()
-    anomalies: list[dict[str, Any]] = []
-    for first, second, _ in candidate_pairs(internal, maximum_gap):
-        if first in used or second in used:
-            continue
-        if not endpoints_face_gap(
-            skeleton, internal[first], internal[second], minimum_facing_cosine
-        ):
-            continue
-        metrics = gap_metrics(
-            segmentation, internal[first], internal[second], endpoint_trim
-        )
-        if metrics["empty_fraction"] < minimum_empty_fraction:
-            continue
-        used.update((first, second))
-        midpoint = (internal[first].astype(float) + internal[second]) / 2
-        anomalies.append(
-            {
-                "id": len(anomalies) + 1,
-                "type": "confirmed_break",
-                "endpoints_zyx": [internal[first].tolist(), internal[second].tolist()],
-                "midpoint_zyx": midpoint.tolist(),
-                "slice": int(round(midpoint[0])),
-                **{key: round(value, 3) for key, value in metrics.items()},
-            }
+    junctions = []
+    for node_id in range(node_count):
+        coordinates = skeleton_points[node_voxels[node_labels == node_id]].mean(axis=0)
+        junctions.append(
+            {"id": node_id, "position": np.round(coordinates[::-1], 3).tolist()}
         )
 
-    for index, endpoint in enumerate(internal):
-        if index in used:
-            continue
-        anomalies.append(
-            {
-                "id": len(anomalies) + 1,
-                "type": "unpaired_internal_endpoint",
-                "endpoint_zyx": endpoint.tolist(),
-                "slice": int(endpoint[0]),
-                "estimated_empty_gap_voxels": None,
-                "note": "Possible broken or missing strut; no nearby endpoint pair was confirmed.",
-            }
-        )
+    visited = np.zeros(len(skeleton_points), dtype=bool)
+    connections = {}
+    for voxel in node_voxels:
+        start_node = int(voxel_node[voxel])
+        for neighbor in graph.indices[graph.indptr[voxel] : graph.indptr[voxel + 1]]:
+            if voxel_node[neighbor] >= 0 or visited[neighbor]:
+                continue
 
-    slice_counts: dict[int, int] = {}
-    for anomaly in anomalies:
-        slice_number = int(anomaly["slice"])
-        slice_counts[slice_number] = slice_counts.get(slice_number, 0) + 1
-    total = len(anomalies)
-    per_slice = [
+            previous, current = voxel, int(neighbor)
+            path = [voxel]
+            while voxel_node[current] < 0:
+                path.append(current)
+                visited[current] = True
+                neighbors = graph.indices[
+                    graph.indptr[current] : graph.indptr[current + 1]
+                ]
+                next_voxel = neighbors[0] if neighbors[1] == previous else neighbors[1]
+                previous, current = current, int(next_voxel)
+
+            end_node = int(voxel_node[current])
+            if start_node != end_node:
+                path.append(current)
+                connection = tuple(sorted((start_node, end_node)))
+                if connection not in connections or len(path) > len(
+                    connections[connection]
+                ):
+                    connections[connection] = path
+
+    struts = [
         {
-            "slice": slice_number,
-            "count": count,
-            "percentage_of_anomalies": round(100 * count / total, 3) if total else 0.0,
+            "id": strut_id,
+            "junction0": connection[0],
+            "junction1": connection[1],
+            "points": skeleton_points[path][:, ::-1].tolist(),
         }
-        for slice_number, count in sorted(slice_counts.items())
+        for strut_id, (connection, path) in enumerate(connections.items())
     ]
+    return {"junctions": junctions, "struts": struts}
 
-    confirmed = sum(a["type"] == "confirmed_break" for a in anomalies)
-    unpaired = total - confirmed
-    return {
-        "summary": {
-            "total_skeleton_endpoints": int(len(all_endpoints)),
-            "ignored_exterior_endpoints": int(len(exterior)),
-            "internal_endpoints": int(len(internal)),
-            "confirmed_breaks": int(confirmed),
-            "unpaired_internal_endpoints": int(unpaired),
-            "total_anomalies": int(total),
-        },
-        "parameters": {
-            "boundary_margin_voxels": boundary_margin,
-            "maximum_gap_voxels": maximum_gap,
-            "minimum_empty_fraction": minimum_empty_fraction,
-            "minimum_facing_cosine": minimum_facing_cosine,
-            "endpoint_trim_voxels": endpoint_trim,
-            "foreground_bounds_zyx": [lower.tolist(), upper.tolist()],
-        },
-        "anomalies": anomalies,
-        "anomalies_by_slice": per_slice,
-        "limitations": (
-            "Unpaired internal endpoints are candidates, not confirmed missing struts. "
-            "A fully absent strut with no skeleton trace requires a CAD or defect-free "
-            "reference lattice for reliable detection."
-        ),
+
+def longest_run(values):
+    edges = np.diff(np.pad(values.astype(np.int8), 1))
+    starts = np.flatnonzero(edges == 1)
+    lengths = np.flatnonzero(edges == -1) - starts
+    if not len(lengths):
+        return 0, 0
+    longest = int(np.argmax(lengths))
+    return int(starts[longest]), int(lengths[longest])
+
+
+def compare_graphs(reference, observed, matching_tolerance, maximum_gap_length):
+    reference_junctions = {
+        int(junction["id"]): np.asarray(junction["position"])
+        for junction in reference["junctions"]
     }
+    observed_points = np.vstack(
+        [strut["points"] for strut in observed["struts"]]
+        + [[junction["position"]] for junction in observed["junctions"]]
+    )
+    observed_tree = cKDTree(observed_points)
+
+    anomalies = []
+    for strut in reference["struts"]:
+        start = reference_junctions[int(strut["junction0"])]
+        end = reference_junctions[int(strut["junction1"])]
+        count = int(np.ceil(np.linalg.norm(end - start))) + 1
+        points = np.linspace(start, end, count)
+        unsupported = observed_tree.query(points)[0] > matching_tolerance
+        gap_start, gap_length = longest_run(unsupported)
+        if gap_length > maximum_gap_length:
+            anomalies.append(
+                {
+                    "strut_id": int(strut["id"]),
+                    "points": points,
+                    "slice": int(
+                        round(points[gap_start + gap_length // 2, 2])
+                    ),
+                }
+            )
+    return anomalies
 
 
-def short_summary(result: dict[str, Any]) -> str:
-    """Create a compact human-readable summary."""
-    summary = result["summary"]
-    total = summary["total_anomalies"]
-    confirmed_percentage = (
-        100 * summary["confirmed_breaks"] / total if total else 0.0
-    )
-    unpaired_percentage = (
-        100 * summary["unpaired_internal_endpoints"] / total if total else 0.0
-    )
-    busiest_slice = max(
-        result["anomalies_by_slice"], key=lambda item: item["count"], default=None
-    )
-    slice_text = (
-        f" Slice {busiest_slice['slice']} has the largest share at "
-        f"{busiest_slice['percentage_of_anomalies']:.1f}% "
-        f"({busiest_slice['count']} anomalies)."
-        if busiest_slice
-        else " No slices contain anomaly candidates."
-    )
-    paired_gaps = [
-        anomaly["estimated_empty_gap_voxels"]
-        for anomaly in result["anomalies"]
-        if anomaly["type"] == "confirmed_break"
-    ]
-    gap_text = (
-        f" Estimated confirmed gap: {min(paired_gaps):.1f}–{max(paired_gaps):.1f} voxels."
-        if paired_gaps
-        else " No paired gap passed the empty-space confirmation test."
+def local_maximum(volume, points, radius):
+    voxels = np.rint(points).astype(int)
+    values = np.full(len(points), -np.inf)
+    shape = np.asarray(volume.shape)
+    for offset in np.ndindex(*(2 * radius + 1,) * 3):
+        coordinates = voxels + np.asarray(offset) - radius
+        valid = np.all((coordinates >= 0) & (coordinates < shape), axis=1)
+        coordinates = coordinates[valid]
+        values[valid] = np.maximum(
+            values[valid],
+            volume[
+                coordinates[:, 0],
+                coordinates[:, 1],
+                coordinates[:, 2],
+            ],
+        )
+    return values
+
+
+def verify_candidates(
+    candidates,
+    segmentation,
+    raw_volume,
+    minimum_strut_coverage,
+    maximum_gap_length,
+    minimum_raw_intensity,
+    sampling_radius=2,
+):
+    slice_ranges = {}
+    confirmed = []
+    weak_segmentation = []
+
+    for candidate in candidates:
+        points = candidate["points"][:, ::-1]
+        mask_present = local_maximum(segmentation, points, sampling_radius) > 0
+        raw_values = local_maximum(raw_volume, points, sampling_radius)
+        slices = np.clip(
+            np.rint(points[:, 0]).astype(int), 0, raw_volume.shape[0] - 1
+        )
+
+        normalized = np.empty(len(points))
+        for slice_index in np.unique(slices):
+            if slice_index not in slice_ranges:
+                image = np.asarray(raw_volume[slice_index])
+                low = float(np.median(image))
+                high = float(np.percentile(image, 99.5))
+                slice_ranges[slice_index] = (low, max(high - low, 1.0))
+            low, scale = slice_ranges[slice_index]
+            selected = slices == slice_index
+            normalized[selected] = np.clip(
+                (raw_values[selected] - low) / scale, 0, 1
+            )
+
+        raw_present = normalized >= minimum_raw_intensity
+        _, gap_length = longest_run(~(mask_present | raw_present))
+        mask_coverage = float(mask_present.mean())
+        raw_coverage = float(raw_present.mean())
+        result = {
+            "strut_id": candidate["strut_id"],
+            "slice": candidate["slice"],
+            "mask_coverage": mask_coverage,
+            "raw_coverage": raw_coverage,
+            "gap_length": gap_length,
+        }
+
+        if (
+            mask_coverage >= minimum_strut_coverage
+            or raw_coverage >= minimum_strut_coverage
+            or gap_length <= maximum_gap_length
+        ):
+            weak_segmentation.append(result)
+        else:
+            confirmed.append(result)
+    return confirmed, weak_segmentation
+
+
+def markdown_summary(
+    reference,
+    candidates,
+    confirmed,
+    weak_segmentation,
+    minimum_strut_coverage,
+    maximum_gap_length,
+    minimum_raw_intensity,
+):
+    expected = len(reference["struts"])
+    percentage = 100 * len(confirmed) / expected
+    top_slices = Counter(anomaly["slice"] for anomaly in confirmed).most_common(30)
+    rows = "\n".join(
+        f"| {slice_index} | {count} |" for slice_index, count in top_slices
     )
     return (
-        f"Detected {total} total anomaly candidates: "
-        f"{summary['confirmed_breaks']} confirmed endpoint-pair breaks "
-        f"({confirmed_percentage:.1f}%) and "
-        f"{summary['unpaired_internal_endpoints']} unpaired internal endpoints "
-        f"({unpaired_percentage:.1f}%). "
-        f"Ignored {summary['ignored_exterior_endpoints']} natural exterior endpoints."
-        + gap_text
-        + slice_text
+        "# 9x9x9 Lattice Anomaly Summary\n\n"
+        f"- Total expected struts: **{expected}**\n"
+        f"- Graph-level candidates: **{len(candidates)}**\n"
+        f"- Weak-segmentation candidates: **{len(weak_segmentation)}**\n"
+        f"- Confirmed anomalies: **{len(confirmed)}**\n"
+        f"- Confirmed anomaly percentage: **{percentage:.2f}%**\n\n"
+        "## Thresholds\n\n"
+        f"- Minimum strut coverage: **{minimum_strut_coverage:.2f}**\n"
+        f"- Maximum allowed gap length: **{maximum_gap_length} voxels**\n"
+        f"- Minimum normalized raw CT intensity: **{minimum_raw_intensity:.2f}**\n\n"
+        "## Top 30 slices with the most anomalies\n\n"
+        "| Slice | Anomalies |\n"
+        "|---:|---:|\n"
+        f"{rows}\n"
     )
 
 
-def gap_statistics(result: dict[str, Any]) -> dict[str, Any]:
-    """Summarize confirmed gap lengths."""
-    gaps = [
-        float(anomaly["estimated_empty_gap_voxels"])
-        for anomaly in result["anomalies"]
-        if anomaly["type"] == "confirmed_break"
-    ]
-    return {
-        "count": len(gaps),
-        "minimum_voxels": round(min(gaps), 3) if gaps else None,
-        "median_voxels": round(float(np.median(gaps)), 3) if gaps else None,
-        "mean_voxels": round(float(np.mean(gaps)), 3) if gaps else None,
-        "maximum_voxels": round(max(gaps), 3) if gaps else None,
-    }
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("segmentation", type=Path)
+    parser.add_argument("skeleton", type=Path)
+    parser.add_argument("raw_volume", type=Path)
+    parser.add_argument("reference_json", type=Path)
+    parser.add_argument("observed_json", type=Path)
+    parser.add_argument("summary", type=Path)
+    parser.add_argument("--matching-tolerance", type=float, default=10.0)
+    parser.add_argument("--minimum-strut-coverage", type=float, default=0.35)
+    parser.add_argument("--maximum-gap-length", type=int, default=10)
+    parser.add_argument("--minimum-raw-intensity", type=float, default=0.50)
+    args = parser.parse_args()
 
-
-def markdown_report(result: dict[str, Any], top_slices: int = 10) -> str:
-    """Create a brief human-readable report."""
-    counts = result["summary"]
-    gaps = gap_statistics(result)
-    top = sorted(
-        result["anomalies_by_slice"],
-        key=lambda item: (-item["count"], item["slice"]),
-    )[:top_slices]
-    lines = [
-        "# Lattice Anomaly Summary",
-        "",
-        f"- Total anomaly candidates: **{counts['total_anomalies']}**",
-        f"- Confirmed endpoint-pair breaks: **{counts['confirmed_breaks']}** "
-        f"({100 * counts['confirmed_breaks'] / max(counts['total_anomalies'], 1):.1f}%)",
-        f"- Unpaired internal endpoints: **{counts['unpaired_internal_endpoints']}** "
-        f"({100 * counts['unpaired_internal_endpoints'] / max(counts['total_anomalies'], 1):.1f}%)",
-        f"- Natural exterior endpoints ignored: **{counts['ignored_exterior_endpoints']}**",
-        f"- Confirmed gap length: **{gaps['minimum_voxels']}–{gaps['maximum_voxels']} voxels** "
-        f"(median {gaps['median_voxels']}, mean {gaps['mean_voxels']})",
-        "",
-        f"## Top {len(top)} slices",
-        "",
-        "| Slice | Anomalies | Percentage |",
-        "|---:|---:|---:|",
-    ]
-    lines.extend(
-        f"| {item['slice']} | {item['count']} | {item['percentage_of_anomalies']:.1f}% |"
-        for item in top
-    )
-    lines.extend(
-        [
-            "",
-            "Confirmed breaks require paired inward-facing endpoints and primarily empty "
-            "segmentation between them. Unpaired endpoints remain possible defects or "
-            "skeletonization artifacts.",
-        ]
-    )
-    return "\n".join(lines) + "\n"
-
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("segmentation", type=Path, help="Matching 3-D mask (.npy/.tif/.tiff)")
-    parser.add_argument("skeleton", type=Path, help="Matching 3-D skeleton (.npy/.tif/.tiff)")
-    parser.add_argument("--output", type=Path, help="Output Markdown summary")
-    parser.add_argument("--boundary-margin", type=int, default=12)
-    parser.add_argument("--maximum-gap", type=float, default=30.0)
-    parser.add_argument("--minimum-empty-fraction", type=float, default=0.70)
-    parser.add_argument("--minimum-facing-cosine", type=float, default=0.50)
-    parser.add_argument("--endpoint-trim", type=int, default=2)
-    parser.add_argument("--chunk-depth", type=int, default=32)
-    return parser
-
-
-def main() -> None:
-    args = build_parser().parse_args()
     segmentation = load_volume(args.segmentation)
-    skeleton = load_volume(args.skeleton, skeleton=True)
-    result = analyze(
-        segmentation,
-        skeleton,
-        boundary_margin=args.boundary_margin,
-        maximum_gap=args.maximum_gap,
-        minimum_empty_fraction=args.minimum_empty_fraction,
-        minimum_facing_cosine=args.minimum_facing_cosine,
-        endpoint_trim=args.endpoint_trim,
-        chunk_depth=args.chunk_depth,
+    skeleton = load_volume(args.skeleton)
+    raw_volume = load_volume(args.raw_volume)
+    if not (segmentation.shape == skeleton.shape == raw_volume.shape):
+        raise ValueError("segmentation, skeleton, and raw volume shapes differ")
+
+    observed = observed_graph(segmentation, skeleton)
+    args.observed_json.write_text(json.dumps(observed, indent=2) + "\n")
+
+    reference = json.loads(args.reference_json.read_text())
+    candidates = compare_graphs(
+        reference, observed, args.matching_tolerance, args.maximum_gap_length
     )
-    result["inputs"] = {
-        "segmentation": str(args.segmentation.resolve()),
-        "skeleton": str(args.skeleton.resolve()),
-        "shape_zyx": list(segmentation.shape),
-    }
-    result["short_summary"] = short_summary(result)
-    output = args.output or args.segmentation.parent / "anomaly_summary.md"
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(markdown_report(result), encoding="utf-8")
-    print(f"Saved anomaly summary to {output.resolve()}")
-    print(result["short_summary"])
+    confirmed, weak_segmentation = verify_candidates(
+        candidates,
+        segmentation,
+        raw_volume,
+        args.minimum_strut_coverage,
+        args.maximum_gap_length,
+        args.minimum_raw_intensity,
+    )
+    args.summary.write_text(
+        markdown_summary(
+            reference,
+            candidates,
+            confirmed,
+            weak_segmentation,
+            args.minimum_strut_coverage,
+            args.maximum_gap_length,
+            args.minimum_raw_intensity,
+        )
+    )
+    print(f"Observed lattice: {args.observed_json}")
+    print(f"Anomaly summary: {args.summary}")
 
 
 if __name__ == "__main__":
