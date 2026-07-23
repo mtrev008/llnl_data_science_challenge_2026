@@ -12,7 +12,6 @@ confirmed without a CAD/reference model.
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 from typing import Any
 
@@ -31,14 +30,13 @@ def load_volume(path: Path, *, skeleton: bool = False) -> np.ndarray:
     suffix = path.suffix.lower()
     if suffix == ".npy":
         volume = np.load(path, mmap_mode="r", allow_pickle=False)
-    elif suffix in {".tif", ".tiff"} and not skeleton:
+    elif suffix in {".tif", ".tiff"}:
         try:
             volume = tifffile.memmap(path)
         except ValueError:
             volume = tifffile.imread(path)
     else:
-        expected = ".npy" if skeleton else ".npy, .tif, or .tiff"
-        raise ValueError(f"{path} must be a {expected} file")
+        raise ValueError(f"{path} must be a .npy, .tif, or .tiff file")
     if volume.ndim != 3:
         raise ValueError(f"expected a 3-D volume at {path}, got {volume.shape}")
     return volume
@@ -340,43 +338,30 @@ def short_summary(result: dict[str, Any]) -> str:
     )
 
 
-def compact_report(result: dict[str, Any], top_slices: int = 10) -> dict[str, Any]:
-    """Return the requested findings without endpoint-coordinate diagnostics."""
+def gap_statistics(result: dict[str, Any]) -> dict[str, Any]:
+    """Summarize confirmed gap lengths."""
     gaps = [
         float(anomaly["estimated_empty_gap_voxels"])
         for anomaly in result["anomalies"]
         if anomaly["type"] == "confirmed_break"
     ]
-    gap_statistics = {
+    return {
         "count": len(gaps),
         "minimum_voxels": round(min(gaps), 3) if gaps else None,
         "median_voxels": round(float(np.median(gaps)), 3) if gaps else None,
         "mean_voxels": round(float(np.mean(gaps)), 3) if gaps else None,
         "maximum_voxels": round(max(gaps), 3) if gaps else None,
     }
-    busiest = sorted(
-        result["anomalies_by_slice"],
-        key=lambda item: (-item["count"], item["slice"]),
-    )[:top_slices]
-    return {
-        "short_summary": result["short_summary"],
-        "counts": result["summary"],
-        "confirmed_gap_statistics": gap_statistics,
-        "confirmed_gap_estimates_voxels": [round(gap, 3) for gap in gaps],
-        "top_slices": busiest,
-        "slice_percentages": {
-            str(item["slice"]): item["percentage_of_anomalies"]
-            for item in result["anomalies_by_slice"]
-        },
-        "limitations": result["limitations"],
-    }
 
 
 def markdown_report(result: dict[str, Any], top_slices: int = 10) -> str:
     """Create a brief human-readable report."""
-    report = compact_report(result, top_slices)
-    counts = report["counts"]
-    gaps = report["confirmed_gap_statistics"]
+    counts = result["summary"]
+    gaps = gap_statistics(result)
+    top = sorted(
+        result["anomalies_by_slice"],
+        key=lambda item: (-item["count"], item["slice"]),
+    )[:top_slices]
     lines = [
         "# Lattice Anomaly Summary",
         "",
@@ -389,14 +374,14 @@ def markdown_report(result: dict[str, Any], top_slices: int = 10) -> str:
         f"- Confirmed gap length: **{gaps['minimum_voxels']}–{gaps['maximum_voxels']} voxels** "
         f"(median {gaps['median_voxels']}, mean {gaps['mean_voxels']})",
         "",
-        f"## Top {len(report['top_slices'])} slices",
+        f"## Top {len(top)} slices",
         "",
         "| Slice | Anomalies | Percentage |",
         "|---:|---:|---:|",
     ]
     lines.extend(
         f"| {item['slice']} | {item['count']} | {item['percentage_of_anomalies']:.1f}% |"
-        for item in report["top_slices"]
+        for item in top
     )
     lines.extend(
         [
@@ -412,13 +397,8 @@ def markdown_report(result: dict[str, Any], top_slices: int = 10) -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("segmentation", type=Path, help="Matching 3-D mask (.npy/.tif/.tiff)")
-    parser.add_argument("skeleton", type=Path, help="Matching 3-D skeleton (.npy)")
-    parser.add_argument("--output", type=Path, help="Optional JSON results path")
-    parser.add_argument(
-        "--detailed-output",
-        type=Path,
-        help="Optional full JSON diagnostics, including every endpoint coordinate",
-    )
+    parser.add_argument("skeleton", type=Path, help="Matching 3-D skeleton (.npy/.tif/.tiff)")
+    parser.add_argument("--output", type=Path, help="Output Markdown summary")
     parser.add_argument("--boundary-margin", type=int, default=12)
     parser.add_argument("--maximum-gap", type=float, default=30.0)
     parser.add_argument("--minimum-empty-fraction", type=float, default=0.70)
@@ -448,24 +428,10 @@ def main() -> None:
         "shape_zyx": list(segmentation.shape),
     }
     result["short_summary"] = short_summary(result)
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        if args.output.suffix.lower() == ".md":
-            args.output.write_text(markdown_report(result), encoding="utf-8")
-        else:
-            # Arrays and per-slice percentages stay on single lines, keeping the
-            # default report compact while retaining all requested measurements.
-            args.output.write_text(
-                json.dumps(compact_report(result), separators=(",", ":")) + "\n",
-                encoding="utf-8",
-            )
-        print(f"Saved compact report to {args.output.resolve()}")
-    if args.detailed_output:
-        args.detailed_output.parent.mkdir(parents=True, exist_ok=True)
-        args.detailed_output.write_text(
-            json.dumps(result, indent=2) + "\n", encoding="utf-8"
-        )
-        print(f"Saved optional detailed diagnostics to {args.detailed_output.resolve()}")
+    output = args.output or args.segmentation.parent / "anomaly_summary.md"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(markdown_report(result), encoding="utf-8")
+    print(f"Saved anomaly summary to {output.resolve()}")
     print(result["short_summary"])
 
 

@@ -10,7 +10,6 @@
 
 #!/usr/bin/env python3
 import argparse
-import json
 from pathlib import Path
 
 import numpy as np
@@ -159,8 +158,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("ground_truth", type=Path)
     parser.add_argument("result", type=Path)
+    parser.add_argument("--output", type=Path, help="Output Markdown summary")
     args = parser.parse_args()
-    print(json.dumps(evaluate(args.ground_truth, args.result)))
+    result = evaluate(args.ground_truth, args.result)
+    output = args.output or args.result.parent / "evaluation_summary.md"
+    output.write_text(
+        "# Segmentation Evaluation\n\n"
+        f"- Score: **{result['score']}/5**\n"
+        f"- {result['reasoning']}\n",
+        encoding="utf-8",
+    )
+    print(f"Saved evaluation summary to {output.resolve()}")
+    print(f"Score: {result['score']}/5")
+    print(result["reasoning"])
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import tifffile
 from matplotlib import image as mpl_image
-from skimage.morphology import skeletonize as skeletonize_volume
 
 try:
     from src.skeletonization import skeletonize_mask
@@ -118,39 +117,16 @@ def skeletonize(input_filepath: str, output_filepath: str) -> str:
     Creates a skeleton from a 3D segmentation mask.
     
     Args:
-        input_filepath: Path to the .npy file containing the 3D mask.
-        output_filepath: Path to save the extracted skeleton (.npy).
+        input_filepath: Path to the .npy, .tif, or .tiff file containing the 3D mask.
+        output_filepath: Path to save the extracted skeleton (.npy, .tif, or .tiff).
         
     Returns:
         A status message indicating success and the save location, or an error message.
     """
-    input_path = Path(input_filepath)
-    output_path = Path(output_filepath)
-    if input_path.suffix.lower() not in {".npy", ".tif", ".tiff"}:
-        raise ValueError("input_filepath must end in .npy, .tif, or .tiff")
-    if output_path.suffix.lower() != ".npy":
-        raise ValueError("output_filepath must end in .npy")
-    if not input_path.is_file():
-        raise FileNotFoundError(f"segmentation mask not found: {input_path}")
-
-    if input_path.suffix.lower() == ".npy":
-        mask = np.load(input_path, mmap_mode="r", allow_pickle=False)
-    else:
-        mask = tifffile.memmap(input_path)
-    if mask.ndim != 3:
-        raise ValueError(f"expected a 3D segmentation mask, got shape {mask.shape}")
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    if input_path.suffix.lower() == ".npy":
-        result = skeletonize_mask(str(input_path), str(output_path))
-    else:
-        result = skeletonize_volume(np.asarray(mask) > 0)
-        np.save(output_path, result, allow_pickle=False)
-    if result is None:
-        raise RuntimeError("skeletonization did not produce an output")
+    result = skeletonize_mask(input_filepath, output_filepath)
 
     return (
-        f"Skeletonized {input_path}; saved {output_path} with shape "
+        f"Skeletonized {input_filepath}; saved {output_filepath} with shape "
         f"{result.shape} and {np.count_nonzero(result)} skeleton voxels."
     )
 

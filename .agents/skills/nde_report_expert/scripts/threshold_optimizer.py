@@ -11,7 +11,6 @@ known-good reference slice.
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 import numpy as np
@@ -109,12 +108,9 @@ def segment_brightness_corrected(
         "smoothing_sigma_slices": smoothing_sigma,
         "threshold_min": float(thresholds.min()),
         "threshold_max": float(thresholds.max()),
-        "thresholds_by_slice": thresholds.round(3).tolist(),
-        "smoothed_median_by_slice": profile.round(3).tolist(),
         "foreground_fraction_min": float(fractions.min()),
         "foreground_fraction_median": float(np.median(fractions)),
         "foreground_fraction_max": float(fractions.max()),
-        "foreground_fraction_by_slice": fractions.round(8).tolist(),
         "foreground_voxels": int(sum(foreground_per_slice)),
         "background_voxels": int(volume.size - sum(foreground_per_slice)),
     }
@@ -127,11 +123,6 @@ def main() -> None:
     parser.add_argument("--reference-slice", type=int, default=380)
     parser.add_argument("--reference-threshold", type=float, default=40049.0)
     parser.add_argument("--smoothing-sigma", type=float, default=8.0)
-    parser.add_argument(
-        "--report",
-        type=Path,
-        help="JSON path for threshold profile and segmentation statistics",
-    )
     args = parser.parse_args()
 
     result = segment_brightness_corrected(
@@ -141,10 +132,6 @@ def main() -> None:
         reference_threshold=args.reference_threshold,
         smoothing_sigma=args.smoothing_sigma,
     )
-    if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-        print(f"Saved report: {args.report.resolve()}")
     print(
         f"Saved corrected mask: {args.output.resolve()}\n"
         f"Threshold range: {result['threshold_min']:.1f}–{result['threshold_max']:.1f}; "
