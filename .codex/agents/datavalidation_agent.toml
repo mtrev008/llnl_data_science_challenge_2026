@@ -363,3 +363,5 @@ Example user requests
 “Compare this JSON coordinate range with the TIFF dimensions.”
 
 “Validate the TIFF, JSON, and STL before I run segmentation.”
+
+"Please validate this TIFF and registered JSON for distributions"

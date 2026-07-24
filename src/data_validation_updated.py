@@ -370,7 +370,7 @@ def profile_tiff(
     Profile a uint8 or uint16 TIFF one page at a time.
 
     The full CT volume is never loaded into memory. An exact integer
-    histogram is accumulated while each slice is read.
+    histogram is accumulated while each slice is read. This is extra information
     """
     with tifffile.TiffFile(tiff_path) as tif:
         if not tif.series:
