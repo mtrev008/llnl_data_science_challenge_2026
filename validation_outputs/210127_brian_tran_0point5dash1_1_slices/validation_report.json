@@ -1,0 +1,308 @@
+{
+  "inputs": {
+    "tiff": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\tif_stacks\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
+    "json": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\registered_jsons\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json",
+    "stl": null
+  },
+  "tiff": {
+    "path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\tif_stacks\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
+    "shape": [
+      761,
+      815,
+      837
+    ],
+    "axes": "ZYX",
+    "dtype": "uint16",
+    "page_count": 761,
+    "series_count": 1,
+    "bits_per_sample": "16",
+    "compression": "NONE",
+    "all_pages_same_shape": true,
+    "all_pages_same_dtype": true,
+    "blank_or_constant_slice_count": 0,
+    "intensity_statistics": {
+      "count": 519119955,
+      "minimum": 0,
+      "maximum": 65535,
+      "mean": 34296.14655017452,
+      "median": 32409,
+      "mode": 32320,
+      "standard_deviation": 5220.137281317775,
+      "p01": 29789,
+      "p05": 30928,
+      "p25": 31765,
+      "p75": 33686,
+      "p95": 48037,
+      "p99": 54370,
+      "zero_fraction": 1.9263370447780225e-09
+    }
+  },
+  "json": {
+    "path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\registered_jsons\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json",
+    "top_level_keys": [
+      "junctions",
+      "struts",
+      "unit_cells"
+    ],
+    "collections": {
+      "junctions": {
+        "record_count": 10206,
+        "numeric_parameter_count": 6,
+        "parameters": {
+          "indices.i": {
+            "count": 10206,
+            "missing_count": 0,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "mean": 0.5,
+            "median": 0.5,
+            "mode": null,
+            "mode_count": 3645,
+            "standard_deviation": 0.4225771273642583,
+            "p05": 0.0,
+            "p25": 0.0,
+            "p75": 1.0,
+            "p95": 1.0,
+            "unique_count": 3
+          },
+          "indices.j": {
+            "count": 10206,
+            "missing_count": 0,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "mean": 0.5,
+            "median": 0.5,
+            "mode": null,
+            "mode_count": 3645,
+            "standard_deviation": 0.4225771273642583,
+            "p05": 0.0,
+            "p25": 0.0,
+            "p75": 1.0,
+            "p95": 1.0,
+            "unique_count": 3
+          },
+          "indices.k": {
+            "count": 10206,
+            "missing_count": 0,
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "mean": 0.5,
+            "median": 0.5,
+            "mode": null,
+            "mode_count": 3645,
+            "standard_deviation": 0.4225771273642583,
+            "p05": 0.0,
+            "p25": 0.0,
+            "p75": 1.0,
+            "p95": 1.0,
+            "unique_count": 3
+          },
+          "position.x": {
+            "count": 10206,
+            "missing_count": 0,
+            "minimum": 58.76061093762958,
+            "maximum": 773.744679080309,
+            "mean": 416.25264500896935,
+            "median": 416.2526450089693,
+            "mode": null,
+            "mode_count": 8,
+            "standard_deviation": 206.63235045122462,
+            "p05": 99.71942677019052,
+            "p25": 220.0565842576554,
+            "p75": 612.4487057602835,
+            "p95": 732.785863247748,
+            "unique_count": 3430
+          },
+          "position.y": {
+            "count": 10206,
+            "missing_count": 0,
+            "minimum": 48.56857306538771,
+            "maximum": 764.9389182508804,
+            "mean": 406.7537456581341,
+            "median": 406.75374565813394,
+            "mode": null,
+            "mode_count": 8,
+            "standard_deviation": 206.6323504512246,
+            "p05": 90.21432138162123,
+            "p25": 210.64521505223905,
+            "p75": 602.862276264029,
+            "p95": 723.2931699346467,
+            "unique_count": 3430
+          },
+          "position.z": {
+            "count": 10206,
+            "missing_count": 0,
+            "minimum": 24.495330850610653,
+            "maximum": 737.8463408544252,
+            "mean": 381.17083585251794,
+            "median": 381.1708358525179,
+            "mode": null,
+            "mode_count": 8,
+            "standard_deviation": 206.63235045122454,
+            "p05": 64.92286622257691,
+            "p25": 184.42636842240586,
+            "p75": 577.9153032826298,
+            "p95": 697.4188054824588,
+            "unique_count": 3430
+          }
+        }
+      },
+      "struts": {
+        "record_count": 18468,
+        "numeric_parameter_count": 2,
+        "parameters": {
+          "thickness": {
+            "count": 18468,
+            "missing_count": 0,
+            "minimum": 0.1,
+            "maximum": 0.1,
+            "mean": 0.09999999999999999,
+            "median": 0.1,
+            "mode": 0.1,
+            "mode_count": 18468,
+            "standard_deviation": 1.3877787807814457e-17,
+            "p05": 0.1,
+            "p25": 0.1,
+            "p75": 0.1,
+            "p95": 0.1,
+            "unique_count": 1
+          },
+          "unit_cell_edge_idx": {
+            "count": 18468,
+            "missing_count": 0,
+            "minimum": 0.0,
+            "maximum": 35.0,
+            "mean": 16.37719298245614,
+            "median": 17.5,
+            "mode": null,
+            "mode_count": 729,
+            "standard_deviation": 10.327437778462812,
+            "p05": 1.0,
+            "p25": 6.0,
+            "p75": 26.0,
+            "p95": 31.0,
+            "unique_count": 36
+          }
+        }
+      },
+      "unit_cells": {
+        "record_count": 729,
+        "numeric_parameter_count": 4,
+        "parameters": {
+          "indices.i": {
+            "count": 729,
+            "missing_count": 0,
+            "minimum": 0.0,
+            "maximum": 8.0,
+            "mean": 4.0,
+            "median": 4.0,
+            "mode": null,
+            "mode_count": 81,
+            "standard_deviation": 2.581988897471611,
+            "p05": 0.0,
+            "p25": 2.0,
+            "p75": 6.0,
+            "p95": 8.0,
+            "unique_count": 9
+          },
+          "indices.j": {
+            "count": 729,
+            "missing_count": 0,
+            "minimum": 0.0,
+            "maximum": 8.0,
+            "mean": 4.0,
+            "median": 4.0,
+            "mode": null,
+            "mode_count": 81,
+            "standard_deviation": 2.581988897471611,
+            "p05": 0.0,
+            "p25": 2.0,
+            "p75": 6.0,
+            "p95": 8.0,
+            "unique_count": 9
+          },
+          "indices.k": {
+            "count": 729,
+            "missing_count": 0,
+            "minimum": 0.0,
+            "maximum": 8.0,
+            "mean": 4.0,
+            "median": 4.0,
+            "mode": null,
+            "mode_count": 81,
+            "standard_deviation": 2.581988897471611,
+            "p05": 0.0,
+            "p25": 2.0,
+            "p75": 6.0,
+            "p95": 8.0,
+            "unique_count": 9
+          },
+          "struts.__length__": {
+            "count": 729,
+            "missing_count": 0,
+            "minimum": 24.0,
+            "maximum": 36.0,
+            "mean": 25.333333333333332,
+            "median": 24.0,
+            "mode": 24.0,
+            "mode_count": 512,
+            "standard_deviation": 2.1773242158072694,
+            "p05": 24.0,
+            "p25": 24.0,
+            "p75": 28.0,
+            "p95": 28.0,
+            "unique_count": 4
+          }
+        }
+      }
+    },
+    "graph_validation": {
+      "junction_collection": "junctions",
+      "strut_collection": "struts",
+      "unit_cell_collection": "unit_cells",
+      "junction_count": 10206,
+      "strut_count": 18468,
+      "unit_cell_count": 729,
+      "duplicate_junction_id_count": 0,
+      "duplicate_strut_id_count": 0,
+      "invalid_reference_count": 0,
+      "self_connection_count": 0,
+      "duplicate_endpoint_pair_count": 0,
+      "node_degree_statistics": {
+        "count": 9694,
+        "missing_count": 512,
+        "minimum": 1.0,
+        "maximum": 8.0,
+        "mean": 3.8101918712605736,
+        "median": 3.0,
+        "mode": 8.0,
+        "mode_count": 2430,
+        "standard_deviation": 2.6173855154659615,
+        "p05": 1.0,
+        "p25": 2.0,
+        "p75": 8.0,
+        "p95": 8.0,
+        "unique_count": 5
+      }
+    }
+  },
+  "cross_file": {
+    "coordinate_check_available": true,
+    "json_minimum_xyz": [
+      58.76061093762958,
+      48.56857306538771,
+      24.495330850610653
+    ],
+    "json_maximum_xyz": [
+      773.744679080309,
+      764.9389182508804,
+      737.8463408544252
+    ],
+    "plausible_xyz_voxel_coordinates": true,
+    "plausible_zyx_voxel_coordinates": false,
+    "note": "This is only a numerical bounds check. It does not prove that the graph is correctly registered to the CT material."
+  },
+  "decision": "PASS",
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,365 @@
+Data Validation Analytics
+
+Use this skill as the first quality-control and dataset-profiling stage in a lattice CT analysis pipeline.
+
+Core rule
+
+Run deterministic code for all counts, statistics, integrity checks, and plots. Use language-model reasoning only to select inputs, interpret the generated reports, explain limitations, and determine which downstream stages may proceed.
+
+Never modify the original scientific files.
+
+Locked Python environment
+
+Use this exact Python interpreter for every validation command:
+
+C:\Users\andre\miniconda3\envs\dssi_env\python.exe
+
+Treat this interpreter as mandatory. Do not run bare python, python3, py, pip, or conda activate. Do not search for, select, or fall back to another Python installation or Conda environment.
+
+Before running the validator, execute this preflight command with the locked interpreter:
+
+& "C:\Users\andre\miniconda3\envs\dssi_env\python.exe" -c "import sys, numpy, tifffile, matplotlib; print(sys.executable)"
+
+Require the printed interpreter path to equal:
+
+C:\Users\andre\miniconda3\envs\dssi_env\python.exe
+
+If the interpreter does not exist, the path does not match, or a required import fails:
+
+Stop immediately.
+
+Do not run the validator.
+
+Do not switch environments.
+
+Do not install packages without explicit user approval.
+
+Report the locked interpreter path and the exact missing dependency or error.
+
+Return a BLOCKED_ENVIRONMENT status.
+
+Allow at most one preflight attempt.
+
+When package installation is explicitly authorized, install only into the locked interpreter using:
+
+& "C:\Users\andre\miniconda3\envs\dssi_env\python.exe" -m pip install <package-names>
+
+Never use bare pip and never install the repository's full dependency list unless the user explicitly requests it.
+
+Supported inputs
+
+Required CT volume: .tif or .tiff
+
+Required registered lattice graph: .json
+
+Optional nominal geometry: .stl
+
+Output directory for reports, CSV files, and plots
+
+Do not assume that similarly named files describe the same specimen. Preserve the exact file paths in the report.
+
+Workflow
+
+Confirm that the requested input files exist.
+
+Confirm that the TIFF and JSON are intended to describe the same specimen when pairing evidence is available.
+
+Check Python dependencies:
+
+numpy
+
+tifffile
+
+matplotlib
+
+trimesh only when STL analysis is requested
+
+Run src/data_validation_updated.py with the supplied paths.
+
+Inspect the CSV statistics and generated plots when interpreting distributions or anomalies.
+
+Return the deterministic decision unchanged: PASS, PASS_WITH_WARNINGS, or FAIL.
+
+Explain what passed, what remains uncertain, and which downstream operations are permitted.
+
+Command
+
+Run from the skill directory or use the absolute script path:
+
+& "C:\Users\andre\llnl_data_science_challenge_2026\src\data_validation_updated.py `
+  --tiff "<path-to-volume.tif>" `
+  --json "<path-to-registered-graph.json>" `
+  --output-dir "output"
+
+Include an STL only when requested:
+
+& "C:\Users\andre\llnl_data_science_challenge_2026\src\data_validation_updated.py `
+  --tiff "<path-to-volume.tif>" `
+  --json "<path-to-registered-graph.json>" `
+  --stl "<path-to-design.stl>" `
+  --output-dir "output"
+
+Run these commands from the skill directory. PowerShell's call operator & is required because the locked interpreter path is quoted. Always quote paths containing spaces.
+
+TIFF profiling requirements
+
+The script must report:
+
+Volume shape and axis order
+
+Data type and bit depth
+
+Page and image-series counts
+
+Page-shape and page-data-type consistency
+
+Compression
+
+Global intensity count, minimum, maximum, mean, median, mode, standard deviation, and percentiles
+
+Zero-valued voxel fraction
+
+Constant-slice count
+
+Per-slice minimum, maximum, mean, standard deviation, and zero fraction
+
+Global intensity distribution plot
+
+Per-slice mean and standard-deviation trend plots
+
+Treat TIFF intensity as scanner or reconstruction intensity. Do not call it physical mass density unless calibration evidence is supplied.
+
+JSON profiling requirements
+
+Profile each top-level list containing dictionary records independently.
+
+For each meaningful numeric field, report:
+
+Count
+
+Missing count
+
+Minimum
+
+Maximum
+
+Mean
+
+Median
+
+Mode when one unambiguous repeated mode exists
+
+Mode frequency
+
+Standard deviation
+
+5th, 25th, 75th, and 95th percentiles
+
+Unique-value count
+
+Distribution plot
+
+Identifier handling
+
+Exclude identifier-like fields from arithmetic summaries and plots, including:
+
+id
+
+junction0
+
+junction1
+
+source
+
+target
+
+keys ending in _id or _ids
+
+Still validate identifier fields for uniqueness and reference integrity.
+
+Array handling
+
+Split coordinate arrays such as position: [x, y, z] into position.x, position.y, and position.z.
+
+Split cell indices such as indices: [i, j, k] into indices.i, indices.j, and indices.k.
+
+For long arrays of references, calculate the array length rather than the mean of the referenced IDs. Example: struts becomes struts.__length__.
+
+Graph validation requirements
+
+For recognized junction, strut, and unit-cell collections, report:
+
+Junction count
+
+Strut count
+
+Unit-cell count
+
+Duplicate junction-ID count
+
+Duplicate strut-ID count
+
+Invalid strut-to-junction reference count
+
+Self-connected strut count
+
+Duplicate endpoint-pair count
+
+Junction-degree statistics and distribution
+
+Treat invalid endpoint references and duplicate critical IDs as failures.
+
+Do not automatically treat duplicate endpoint pairs as failures because neighboring unit cells may intentionally reference the same physical edge. Report them for interpretation.
+
+TIFF-to-JSON comparison
+
+Test whether recognized JSON junction coordinates fit numerically inside the TIFF under both conventions:
+
+JSON XYZ mapped to NumPy ZYX
+
+JSON already interpreted as ZYX
+
+State clearly that this is only a coordinate-bounds plausibility check. It does not prove spatial registration, matching specimens, physical units, origin, or overlap with CT material.
+
+Do not invent:
+
+Voxel spacing
+
+Physical units
+
+Coordinate origin
+
+Registration transform
+
+Radius-versus-diameter meaning of thickness
+
+Optional STL profiling
+
+When an STL is supplied, report:
+
+Vertex count
+
+Triangle count
+
+Surface area
+
+Watertight status
+
+Enclosed volume only when watertight
+
+XYZ bounds and dimensions
+
+Connected-component count
+
+Degenerate-face count
+
+Warn that enclosed volume is unreliable when the mesh is not watertight.
+
+Decision rules
+
+PASS
+
+Return PASS when required files are readable, TIFF pages are structurally consistent, recognized graph collections exist, critical IDs are unique, strut references are valid, and no deterministic failure condition is present.
+
+PASS_WITH_WARNINGS
+
+Return PASS_WITH_WARNINGS when the files are usable but interpretation remains limited, such as:
+
+Constant TIFF slices
+
+Unavailable coordinate comparison
+
+JSON coordinates do not directly fit the TIFF
+
+Non-watertight STL
+
+Unknown units or registration details identified during interpretation
+
+FAIL
+
+Return FAIL for conditions including:
+
+Missing or unreadable required input
+
+Invalid JSON syntax or unexpected top-level structure
+
+Inconsistent TIFF page shapes or data types
+
+Missing recognized junction or strut collection
+
+Duplicate junction or strut IDs
+
+Struts referencing nonexistent junctions
+
+Do not continue to segmentation or anomaly detection after FAIL.
+
+Required outputs
+
+Expect this directory structure:
+
+<output-directory>/
+├── validation_report.json
+├── validation_report.md
+├── csv/
+│   ├── json_parameter_statistics.csv
+│   └── tiff_slice_statistics.csv
+└── plots/
+    ├── tiff_intensity_distribution.png
+    ├── tiff_slice_mean.png
+    ├── tiff_slice_standard_deviation.png
+    ├── junction_degree_distribution.png
+    └── <collection>__<parameter>.png
+
+See references/output-schema.md for interpretation and handoff fields.
+
+Interpretation format
+
+After running the script, summarize results using these sections:
+
+Decision — exact deterministic decision
+
+Inputs — resolved TIFF, JSON, optional STL paths
+
+TIFF profile — shape, axes, type, intensity statistics, slice anomalies
+
+JSON profile — collection counts and the most informative parameter statistics
+
+Graph integrity — references, duplicates, self-connections, degree distribution
+
+Cross-file compatibility — coordinate-bounds results and limitations
+
+Warnings and failures — each issue with supporting values
+
+Downstream handoff — allowed, limited, and blocked tasks
+
+Output files — report, CSV, and plot locations
+
+Do not reproduce every statistic in prose. Highlight unusual ranges, constant fields, missing values, outliers, and structural inconsistencies; direct the user to the CSV for the complete table.
+
+Downstream handoff guidance
+
+Allow TIFF visualization and exploratory statistics when the TIFF passes structural checks.
+
+Allow graph analysis when required graph collections and references are valid.
+
+Allow segmentation only when the TIFF is readable and structurally consistent.
+
+Do not claim accurate physical measurements when voxel spacing or units are unknown.
+
+Do not claim JSON-to-TIFF registration is proven by an in-bounds coordinate check.
+
+Do not allow downstream processing after a FAIL unless the user explicitly asks to diagnose or repair the validation problem.
+
+Example user requests
+
+“Validate this TIFF and registered JSON and summarize the distributions.”
+
+“Give me min, max, mean, median, mode, and plots for every meaningful JSON field.”
+
+“Check whether this 9x9x9 lattice graph is internally consistent.”
+
+“Profile the CT intensity distribution without loading the whole volume at once.”
+
+“Compare this JSON coordinate range with the TIFF dimensions.”
+
+“Validate the TIFF, JSON, and STL before I run segmentation.”

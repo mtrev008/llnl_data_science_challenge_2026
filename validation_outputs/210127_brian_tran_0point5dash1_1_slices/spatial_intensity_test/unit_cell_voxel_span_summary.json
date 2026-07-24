@@ -1,0 +1,139 @@
+{
+  "input_json": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\registered_jsons\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json",
+  "tiff_shape_zyx": [
+    761,
+    815,
+    837
+  ],
+  "json_definition": {
+    "unit_cell_count": 729,
+    "index_ranges_ijk": {
+      "i": [
+        0,
+        8
+      ],
+      "j": [
+        0,
+        8
+      ],
+      "k": [
+        0,
+        8
+      ]
+    },
+    "fields": [
+      "id",
+      "indices",
+      "struts"
+    ],
+    "meaning_used": "A JSON unit-cell record and the unique junction endpoints of its referenced struts."
+  },
+  "registered_coordinate_span_statistics": {
+    "x": {
+      "minimum": 79.44267423807514,
+      "p25": 79.44267423807543,
+      "median": 79.44267423807551,
+      "mean": 79.4426742380755,
+      "p75": 79.44267423807557,
+      "maximum": 79.44267423807582,
+      "standard_deviation": 9.649186299635903e-14,
+      "unique_count": 19
+    },
+    "y": {
+      "minimum": 79.59670502060999,
+      "p25": 79.59670502061024,
+      "median": 79.59670502061033,
+      "mean": 79.5967050206103,
+      "p75": 79.59670502061033,
+      "maximum": 79.59670502061044,
+      "standard_deviation": 7.090206024201273e-14,
+      "unique_count": 16
+    },
+    "z": {
+      "minimum": 79.26122333375685,
+      "p25": 79.26122333375713,
+      "median": 79.26122333375719,
+      "mean": 79.26122333375717,
+      "p75": 79.26122333375724,
+      "maximum": 79.26122333375736,
+      "standard_deviation": 9.969296107949306e-14,
+      "unique_count": 21
+    }
+  },
+  "conditional_integer_cover_counts": {
+    "x": {
+      "minimum": 81.0,
+      "p25": 81.0,
+      "median": 81.0,
+      "mean": 81.44307270233196,
+      "p75": 82.0,
+      "maximum": 82.0,
+      "standard_deviation": 0.4967487119059441,
+      "unique_count": 2
+    },
+    "y": {
+      "minimum": 81.0,
+      "p25": 81.0,
+      "median": 82.0,
+      "mean": 81.59670781893004,
+      "p75": 82.0,
+      "maximum": 82.0,
+      "standard_deviation": 0.4905584549855342,
+      "unique_count": 2
+    },
+    "z": {
+      "minimum": 81.0,
+      "p25": 81.0,
+      "median": 81.0,
+      "mean": 81.26337448559671,
+      "p75": 82.0,
+      "maximum": 82.0,
+      "standard_deviation": 0.44046380774517374,
+      "unique_count": 2
+    }
+  },
+  "conditional_cover_box_voxel_count": {
+    "minimum": 531441.0,
+    "p25": 538002.0,
+    "median": 538002.0,
+    "mean": 540035.0685871056,
+    "p75": 544644.0,
+    "maximum": 551368.0,
+    "standard_deviation": 5512.510909018211,
+    "unique_count": 4
+  },
+  "coordinate_box_volume": {
+    "minimum": 501198.4466088886,
+    "p25": 501198.44660889136,
+    "median": 501198.44660889223,
+    "mean": 501198.446608892,
+    "p75": 501198.4466088928,
+    "maximum": 501198.44660889544,
+    "standard_deviation": 1.057172681460723e-09,
+    "unique_count": 78
+  },
+  "whole_lattice_coordinate_bounds_xyz": {
+    "minimum": [
+      58.76061093762958,
+      48.56857306538771,
+      24.495330850610653
+    ],
+    "maximum": [
+      773.744679080309,
+      764.9389182508804,
+      737.8463408544252
+    ]
+  },
+  "naive_full_tiff_dimension_divided_by_9_xyz": [
+    93.0,
+    90.55555555555556,
+    84.55555555555556
+  ],
+  "interpretation_limits": [
+    "The JSON has no voxel spacing, coordinate units, origin, axis declaration, transform matrix, or explicit per-cell voxel mask.",
+    "The README asserts that this JSON is aligned with the same-named TIFF, but does not document the transform or declare that one JSON coordinate unit equals one voxel index.",
+    "Integer cover counts are conditional on treating registered XYZ coordinates as TIFF X,Y,Z voxel indices.",
+    "Cover-box counts include void/background and may overlap neighboring cells; they are not material voxel counts.",
+    "Actual foreground voxels per cell require a segmentation mask plus an explicit boundary/ownership convention."
+  ]
+}

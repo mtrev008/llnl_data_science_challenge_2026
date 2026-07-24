@@ -1,0 +1,177 @@
+{
+  "input_tiff": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\tif_stacks\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
+  "shape_zyx": [
+    761,
+    815,
+    837
+  ],
+  "definitions": {
+    "low_band": "intensity <= validated global P01 (29789)",
+    "high_band": "intensity >= validated global P99 (54370)"
+  },
+  "bands": {
+    "low": {
+      "count": 5193905,
+      "fraction": 0.010005211608557794,
+      "zyx_bounding_box": {
+        "minimum": [
+          0,
+          0,
+          0
+        ],
+        "maximum": [
+          760,
+          814,
+          836
+        ]
+      },
+      "mean_nearest_volume_boundary_voxels": 50.95815094808241,
+      "minimum_nearest_volume_boundary_voxels": 0,
+      "maximum_nearest_volume_boundary_voxels": 378,
+      "nearest_volume_center_zyx": [
+        382,
+        406,
+        417
+      ],
+      "nearest_volume_center_xyz": [
+        417,
+        406,
+        382
+      ],
+      "deepest_from_boundary_zyx": [
+        382,
+        396,
+        414
+      ],
+      "deepest_from_boundary_xyz": [
+        414,
+        396,
+        382
+      ]
+    },
+    "high": {
+      "count": 5192220,
+      "fraction": 0.010001965730637344,
+      "zyx_bounding_box": {
+        "minimum": [
+          0,
+          47,
+          61
+        ],
+        "maximum": [
+          760,
+          754,
+          769
+        ]
+      },
+      "mean_nearest_volume_boundary_voxels": 28.66872859778669,
+      "minimum_nearest_volume_boundary_voxels": 0,
+      "maximum_nearest_volume_boundary_voxels": 380,
+      "nearest_volume_center_zyx": [
+        386,
+        407,
+        450
+      ],
+      "nearest_volume_center_xyz": [
+        450,
+        407,
+        386
+      ],
+      "deepest_from_boundary_zyx": [
+        380,
+        403,
+        454
+      ],
+      "deepest_from_boundary_xyz": [
+        454,
+        403,
+        380
+      ]
+    }
+  },
+  "exact_minimum": {
+    "intensity": 0,
+    "zyx": [
+      760,
+      753,
+      772
+    ],
+    "xyz": [
+      772,
+      753,
+      760
+    ]
+  },
+  "exact_maximum": {
+    "intensity": 65535,
+    "zyx": [
+      34,
+      636,
+      730
+    ],
+    "xyz": [
+      730,
+      636,
+      34
+    ]
+  },
+  "peak_slices": {
+    "low_count_peak_z": 27,
+    "high_count_peak_z": 0
+  },
+  "slice_selection": {
+    "rule": "maximum within-slice standard deviation after excluding the outer 10% of Z slices",
+    "eligible_z_range_inclusive": [
+      77,
+      684
+    ],
+    "selected_z": 266,
+    "selected_slice_statistics": {
+      "z": 266,
+      "minimum": 28292,
+      "maximum": 59213,
+      "mean": 33367.96654426047,
+      "standard_deviation": 5700.260055937145,
+      "low_count": 57965,
+      "low_fraction": 0.0849733564952247,
+      "high_count": 7015,
+      "high_fraction": 0.010283586574898666
+    }
+  },
+  "selected_slice_representative_points": [
+    {
+      "band": "low",
+      "label": "representative_on_selected_slice",
+      "z": 266,
+      "y": 407,
+      "x": 435,
+      "json_x": 435,
+      "json_y": 407,
+      "json_z": 266,
+      "intensity": 29776,
+      "nearest_volume_boundary_voxels": 266
+    },
+    {
+      "band": "high",
+      "label": "representative_on_selected_slice",
+      "z": 266,
+      "y": 408,
+      "x": 418,
+      "json_x": 418,
+      "json_y": 408,
+      "json_z": 266,
+      "intensity": 54452,
+      "nearest_volume_boundary_voxels": 266
+    }
+  ],
+  "polarity_interpretation": {
+    "finding": "On the selected representative slice, the high-band point lies on a bright lattice line and the low-band point lies in a dark cell void.",
+    "supported_conclusion": "The evidence supports higher stored intensity as lattice foreground and lower stored intensity as background/void for threshold-segmentation polarity in this TIFF.",
+    "limits": "This does not identify material, establish physical attenuation or density, or guarantee that one global threshold is accurate on every slice."
+  },
+  "limitations": [
+    "Quantile bands are intensity categories, not material labels.",
+    "Spatial locations alone do not establish attenuation calibration or material identity.",
+    "Foreground/background polarity requires comparison with recognizable lattice and outside-background regions."
+  ]
+}

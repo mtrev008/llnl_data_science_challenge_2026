@@ -1,7 +1,13 @@
 from fastmcp import FastMCP
+from pathlib import Path
+from data_validation_agent import (
+    profile_json,
+    profile_tiff,
+)
+
 
 # Initialize the MCP server
-mcp = FastMCP("CT Segmentation")
+mcp = FastMCP("LLNL CT Analysis Tools")
 
 @mcp.tool()
 def segment_ct_dataset(input_filepath: str, output_filepath: str, threshold: float) -> str:
@@ -48,6 +54,90 @@ def skeletonize(input_filepath: str, output_filepath: str) -> str:
     """
     pass # Implementation goes here, calling skeletonize_mask internally
 
+@mcp.tool()
+def inspect_lattice_dataset(
+    tiff_filepath: str,
+    json_filepath: str,
+    output_directory: str,
+) -> dict:
+    """
+    Validate and statistically profile a lattice CT TIFF and JSON graph.
+    """
+
+    tiff_path = Path(tiff_filepath)
+    json_path = Path(json_filepath)
+    output_path = Path(output_directory)
+
+    plot_directory = output_path / "plots"
+    csv_directory = output_path / "csv"
+
+    tiff_result = profile_tiff(
+        tiff_path,
+        plot_directory,
+        csv_directory,
+    )
+
+    json_result, _ = profile_json(
+        json_path,
+        plot_directory,
+    )
+
+    return {
+        "tiff": tiff_result,
+        "json": json_result,
+    }
+
+
+
+"""
+@mcp.tool()
+def validate_lattice_dataset(
+    tiff_filepath: str,
+    json_filepath: str,
+    output_directory: str,
+) -> dict:
+    
+    Validate an X-ray CT TIFF and registered lattice JSON.
+
+    Checks TIFF integrity, JSON graph integrity, endpoint references,
+    coordinate availability, and basic TIFF-to-JSON spatial compatibility.
+
+    Parameters
+    ----------
+    tiff_filepath:
+        Path to the CT .tif or .tiff file.
+
+    json_filepath:
+        Path to the registered lattice graph .json file.
+
+    output_directory:
+        Directory where validation_report.json and
+        validation_report.md will be saved.
+
+    Returns
+    -------
+    dict
+        Validation decision, error count, warning count, and report paths.
+    
+
+    report = validate_dataset(
+        Path(tiff_filepath),
+        Path(json_filepath),
+        Path(output_directory),
+    )
+
+    return {
+        "decision": report["decision"],
+        "error_count": len(report["all_errors"]),
+        "warning_count": len(report["all_warnings"]),
+        "json_report": str(
+            Path(output_directory) / "validation_report.json"
+        ),
+        "markdown_report": str(
+            Path(output_directory) / "validation_report.md"
+        ),
+    }
+"""
 if __name__ == "__main__":
     # Run the FastMCP server, exposing the tools over standard I/O (default)
     mcp.run()

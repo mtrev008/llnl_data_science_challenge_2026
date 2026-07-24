@@ -1,0 +1,109 @@
+{
+  "input_tiff": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\tif_stacks\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
+  "slice_statistics": {
+    "z": 345,
+    "shape_yx": [
+      815,
+      837
+    ],
+    "count": 682155,
+    "minimum": 28467,
+    "maximum": 59195,
+    "mean": 33270.009843803826,
+    "median": 31165.0,
+    "standard_deviation": 5336.307955882741,
+    "p01": 29505,
+    "p25": 30536,
+    "p75": 32384,
+    "p99": 54356
+  },
+  "selection_method": "Nearest-rank slice percentiles at 0, 1, 25, 50, 75, 99, and 100 percent. For each exact percentile intensity, select the matching voxel nearest a fixed, predeclared spatial anchor to distribute annotations deterministically.",
+  "points": [
+    {
+      "label": "minimum",
+      "percentile": 0,
+      "intensity": 28467,
+      "z": 345,
+      "y": 346,
+      "x": 395,
+      "json_x": 395,
+      "json_y": 346,
+      "json_z": 345
+    },
+    {
+      "label": "P01",
+      "percentile": 1,
+      "intensity": 29505,
+      "z": 345,
+      "y": 166,
+      "x": 684,
+      "json_x": 684,
+      "json_y": 166,
+      "json_z": 345
+    },
+    {
+      "label": "P25",
+      "percentile": 25,
+      "intensity": 30536,
+      "z": 345,
+      "y": 260,
+      "x": 229,
+      "json_x": 229,
+      "json_y": 260,
+      "json_z": 345
+    },
+    {
+      "label": "median",
+      "percentile": 50,
+      "intensity": 31165,
+      "z": 345,
+      "y": 392,
+      "x": 628,
+      "json_x": 628,
+      "json_y": 392,
+      "json_z": 345
+    },
+    {
+      "label": "P75",
+      "percentile": 75,
+      "intensity": 32384,
+      "z": 345,
+      "y": 553,
+      "x": 257,
+      "json_x": 257,
+      "json_y": 553,
+      "json_z": 345
+    },
+    {
+      "label": "P99",
+      "percentile": 99,
+      "intensity": 54356,
+      "z": 345,
+      "y": 407,
+      "x": 339,
+      "json_x": 339,
+      "json_y": 407,
+      "json_z": 345
+    },
+    {
+      "label": "maximum",
+      "percentile": 100,
+      "intensity": 59195,
+      "z": 345,
+      "y": 725,
+      "x": 105,
+      "json_x": 105,
+      "json_y": 725,
+      "json_z": 345
+    }
+  ],
+  "display": "Grayscale display limits are slice P01 to P99; stored point values are unchanged.",
+  "limitations": [
+    "Intensity quantiles are not material classes.",
+    "Appearance supports image-structure interpretation but not material identity or physical calibration."
+  ],
+  "artifacts": {
+    "annotated_png": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\validation_outputs\\210127_brian_tran_0point5dash1_1_slices\\spatial_intensity_test\\annotated_slice_z345.png",
+    "points_csv": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\validation_outputs\\210127_brian_tran_0point5dash1_1_slices\\spatial_intensity_test\\slice_z345_representative_points.csv"
+  }
+}

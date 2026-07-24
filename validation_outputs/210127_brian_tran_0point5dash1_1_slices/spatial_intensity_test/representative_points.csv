@@ -1,0 +1,11 @@
+band,label,z,y,x,json_x,json_y,json_z,intensity,nearest_volume_boundary_voxels
+low,first_lexicographic,0,0,0,0,0,0,27998,0
+low,last_lexicographic,760,814,836,836,814,760,28173,0
+low,nearest_volume_center,382,406,417,417,406,382,29712,378
+low,deepest_from_boundary,382,396,414,414,396,382,29737,378
+high,first_lexicographic,0,47,519,519,47,0,54863,0
+high,last_lexicographic,760,753,389,389,753,760,54686,0
+high,nearest_volume_center,386,407,450,450,407,386,54803,374
+high,deepest_from_boundary,380,403,454,454,403,380,54611,380
+exact_minimum,first_exact_minimum,760,753,772,772,753,760,0,0
+exact_maximum,first_exact_maximum,34,636,730,730,636,34,65535,34
