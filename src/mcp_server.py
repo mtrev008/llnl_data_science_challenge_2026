@@ -6,8 +6,10 @@ import tifffile
 from matplotlib import image as mpl_image
 
 try:
+    from src.workflow_tools import run_pipeline_manager as run_pipeline_manager_impl
     from src.skeletonization import skeletonize_mask
 except ModuleNotFoundError:  # Supports running this file directly from src/.
+    from workflow_tools import run_pipeline_manager as run_pipeline_manager_impl
     from skeletonization import skeletonize_mask
 
 # Initialize the MCP server
@@ -129,6 +131,19 @@ def skeletonize(input_filepath: str, output_filepath: str) -> str:
         f"Skeletonized {input_filepath}; saved {output_filepath} with shape "
         f"{result.shape} and {np.count_nonzero(result)} skeleton voxels."
     )
+
+@mcp.tool()
+def run_pipeline_manager(output_report: str = "reports/report.md") -> str:
+    """
+    Runs the ordered LLNL CT pipeline manager and writes one final report.
+
+    Args:
+        output_report: Path to the consolidated Markdown report.
+
+    Returns:
+        A status message with the pipeline result and report path.
+    """
+    return run_pipeline_manager_impl(output_report)
 
 if __name__ == "__main__":
     # Run the FastMCP server, exposing the tools over standard I/O (default)
