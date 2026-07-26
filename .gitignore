@@ -172,3 +172,10 @@ ehthumbs.db
 Thumbs.db
 
 result
+data/9x9x9_octet_lattice/segmentation/*.tif
+data/9x9x9_octet_lattice/segmentation/*.npy
+
+test_run/*.tif
+
+*.tif
+*.tiff
