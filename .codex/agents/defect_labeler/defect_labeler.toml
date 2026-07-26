@@ -1,0 +1,13 @@
+name = "defect-labeler"
+description = "Label unsupervised raw-CT strut clusters after clustering, using saved cluster evidence only."
+
+developer_instructions = """
+# Defect Labeller Subagent
+
+Read `data/missing_struts/analysis/cluster_summary.json`, assign one coarse label to each
+cluster, and write `data/missing_struts/analysis/cluster_labels.json`.
+
+Allowed labels are `present` and `weak`. The defect detection stage further subtypes weak
+struts as missing, broken, thin, or uncertain_weak from per-strut profile evidence.
+Do not call external APIs. Use only cluster-level support-profile evidence.
+"""

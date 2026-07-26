@@ -52,6 +52,8 @@ PIPELINE_STEPS = [
         "expected_phrase": "Detecting Defects pipeline step",
         "artifacts": [
             "data/missing_struts/analysis/observed_lattice.json",
+            "data/missing_struts/analysis/cluster_summary.json",
+            "data/missing_struts/analysis/cluster_labels.json",
             "data/missing_struts/analysis/per_strut_defects.json",
             "data/missing_struts/analysis/anomaly_summary.json",
             "data/missing_struts/analysis/anomaly_summary.md",
@@ -170,9 +172,10 @@ def collect_step_results(step_name: str) -> list[dict[str, Any]]:
             {
                 "strut_id": item["strut_id"],
                 "classification": item["classification"],
+                "weak_subtype": item.get("weak_subtype"),
+                "weak_subtype_reason": item.get("weak_subtype_reason"),
                 "reason": item["reason"],
                 "coverage_ratio": item["coverage_ratio"],
-                "profile_classification": item.get("profile_classification"),
                 "profile_mean": item.get("profile_mean"),
                 "profile_min": item.get("profile_min"),
                 "low_profile_segments": item.get("low_profile_segments"),
@@ -189,6 +192,16 @@ def collect_step_results(step_name: str) -> list[dict[str, Any]]:
                 "content": read_json_result("data/missing_struts/analysis/anomaly_summary.json"),
             },
             {
+                "title": "Cluster summary",
+                "source": "data/missing_struts/analysis/cluster_summary.json",
+                "content": read_json_result("data/missing_struts/analysis/cluster_summary.json"),
+            },
+            {
+                "title": "Cluster labels",
+                "source": "data/missing_struts/analysis/cluster_labels.json",
+                "content": read_json_result("data/missing_struts/analysis/cluster_labels.json"),
+            },
+            {
                 "title": "Visual review index",
                 "source": "data/missing_struts/analysis/defect_visual_review/visual_review_index.json",
                 "content": read_json_result(
@@ -196,7 +209,7 @@ def collect_step_results(step_name: str) -> list[dict[str, Any]]:
                 ),
             },
             {
-                "title": "Hugging Face model review results",
+                "title": "External model review compatibility record",
                 "source": "data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json",
                 "content": read_json_result(
                     "data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json"

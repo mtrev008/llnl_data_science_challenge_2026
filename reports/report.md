@@ -6,7 +6,7 @@ Passed steps: 5/5
 
 - Subagent: `.codex/agents/data_analyzer`
 - Status: `passed`
-- Command: `/home/mtrev008/miniconda3/bin/python -B .codex/agents/data_analyzer/run.py`
+- Command: `/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/data_analyzer/run.py`
 - Return code: `0`
 
 ### Result Artifacts
@@ -67,7 +67,7 @@ Source: `data/missing_struts/analysis/ct_volume_stats.md`
   "step": "Data Analyzer",
   "subagent": ".codex/agents/data_analyzer",
   "status": "passed",
-  "command": "/home/mtrev008/miniconda3/bin/python -B .codex/agents/data_analyzer/run.py",
+  "command": "/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/data_analyzer/run.py",
   "stdout": "Data Analyzer pipeline step",
   "stderr": "",
   "outputs": [
@@ -126,7 +126,7 @@ Source: `data/missing_struts/analysis/ct_volume_stats.md`
 
 - Subagent: `.codex/agents/segmentation`
 - Status: `passed`
-- Command: `/home/mtrev008/miniconda3/bin/python -B .codex/agents/segmentation/run.py`
+- Command: `/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/segmentation/run.py`
 - Return code: `0`
 
 ### Result Artifacts
@@ -193,7 +193,7 @@ Source: `data/missing_struts/analysis/segmented_mask.tif`
   "step": "Segmentation",
   "subagent": ".codex/agents/segmentation",
   "status": "passed",
-  "command": "/home/mtrev008/miniconda3/bin/python -B .codex/agents/segmentation/run.py",
+  "command": "/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/segmentation/run.py",
   "stdout": "Segmentation pipeline step",
   "stderr": "",
   "outputs": [
@@ -257,7 +257,7 @@ Source: `data/missing_struts/analysis/segmented_mask.tif`
 
 - Subagent: `.codex/agents/skeletonization`
 - Status: `passed`
-- Command: `/home/mtrev008/miniconda3/bin/python -B .codex/agents/skeletonization/run.py`
+- Command: `/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/skeletonization/run.py`
 - Return code: `0`
 
 ### Result Artifacts
@@ -286,7 +286,7 @@ Source: `data/missing_struts/analysis/skeleton.tif`
   "step": "Skeletonization",
   "subagent": ".codex/agents/skeletonization",
   "status": "passed",
-  "command": "/home/mtrev008/miniconda3/bin/python -B .codex/agents/skeletonization/run.py",
+  "command": "/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/skeletonization/run.py",
   "stdout": "Skeletonization pipeline step",
   "stderr": "",
   "outputs": [
@@ -318,17 +318,19 @@ Source: `data/missing_struts/analysis/skeleton.tif`
 
 - Subagent: `.codex/agents/defect_detection`
 - Status: `passed`
-- Command: `/home/mtrev008/miniconda3/bin/python -B .codex/agents/defect_detection/run.py`
+- Command: `/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/defect_detection/run.py`
 - Return code: `0`
 
 ### Result Artifacts
 
-- `data/missing_struts/analysis/observed_lattice.json` - present, 48419091 bytes
-- `data/missing_struts/analysis/per_strut_defects.json` - present, 26388433 bytes
-- `data/missing_struts/analysis/anomaly_summary.json` - present, 1893 bytes
-- `data/missing_struts/analysis/anomaly_summary.md` - present, 2291 bytes
-- `data/missing_struts/analysis/defect_visual_review/visual_review_index.json` - present, 46221 bytes
-- `data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json` - present, 140 bytes
+- `data/missing_struts/analysis/observed_lattice.json` - present, 204 bytes
+- `data/missing_struts/analysis/cluster_summary.json` - present, 4190 bytes
+- `data/missing_struts/analysis/cluster_labels.json` - present, 1692 bytes
+- `data/missing_struts/analysis/per_strut_defects.json` - present, 38612515 bytes
+- `data/missing_struts/analysis/anomaly_summary.json` - present, 3045 bytes
+- `data/missing_struts/analysis/anomaly_summary.md` - present, 1414 bytes
+- `data/missing_struts/analysis/defect_visual_review/visual_review_index.json` - present, 52283 bytes
+- `data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json` - present, 154 bytes
 
 ### Result Content
 
@@ -339,41 +341,337 @@ Source: `data/missing_struts/analysis/anomaly_summary.json`
 ```json
 {
   "reference_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/registered_jsons/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json",
-  "observed_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/observed_lattice.json",
+  "tif_stack": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
   "per_strut_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/per_strut_defects.json",
   "summary": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/anomaly_summary.md",
-  "method": "expected-strut skeleton coverage and endpoint-connectivity test",
+  "method": "unsupervised raw-CT strut embedding clustering with local labeller subagent",
+  "defect_definition": "A defective strut is an expected registered-JSON strut assigned to a cluster that the local labeller subagent labels as weak. Weak struts are then subtyped as missing, broken, thin, or uncertain_weak from raw CT support-profile evidence.",
   "expected_struts": 18468,
-  "observed_struts": 19824,
+  "observed_struts": null,
+  "selected_cluster_count": 2,
+  "silhouette_score": 0.39542695353317475,
+  "cluster_metrics": {
+    "algorithm": "kmeans",
+    "selected_cluster_count": 2,
+    "silhouette_score": 0.39542695353317475,
+    "silhouette_by_k": {
+      "2": 0.39542695353317475,
+      "3": 0.3761038174745983,
+      "4": 0.33201155744931216,
+      "5": 0.32572292322108815
+    },
+    "cluster_stability": {
+      "mean_silhouette_across_seeds": 0.39542695353317475,
+      "min_silhouette_across_seeds": 0.39542695353317475,
+      "max_silhouette_across_seeds": 0.39542695353317475
+    }
+  },
+  "cluster_summary_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_summary.json",
+  "cluster_labels_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_labels.json",
   "classification_counts": {
-    "disconnected": 1896,
-    "missing": 314,
-    "present": 16258
+    "present": 12619,
+    "weak": 5849
   },
-  "graph_candidates": 2210,
-  "weak_segmentation_candidates": 0,
-  "confirmed_anomalies": 2210,
-  "confirmed_anomaly_percentage": 11.96664500758068,
-  "sample_count": 11,
-  "search_radius_voxels": 12.0,
-  "profile_segments": 20,
-  "low_profile_threshold": 0.2,
-  "profile_classification_counts": {
-    "broken": 658,
-    "continuous": 17193,
-    "missing": 314,
-    "weak": 303
+  "weak_subtype_counts": {
+    "broken": 328,
+    "missing": 640,
+    "thin": 4770,
+    "uncertain_weak": 111
   },
+  "confirmed_weak_subtypes": [
+    "missing",
+    "broken",
+    "thin",
+    "uncertain_weak"
+  ],
+  "graph_candidates": 968,
+  "weak_segmentation_candidates": 5849,
+  "confirmed_anomalies": 5849,
+  "confirmed_anomaly_percentage": 31.670998483863983,
+  "nominal_rate_comparison": "detected 31.67% vs nominal 0.5-1.0%",
+  "sample_count": 21,
+  "patch_radius_voxels": 3,
+  "profile_segments": 21,
   "visual_review_dir": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review",
   "visual_review_index": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/visual_review_index.json",
   "visual_review_panels": 100,
-  "visual_classification_counts": {
-    "missing": 100
-  },
   "hf_model_review_results": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json",
   "hf_model_review_count": 0,
-  "hf_model": "zai-org/GLM-4.5V",
-  "hf_model_classification_counts": {}
+  "hf_model": null
+}
+```
+
+#### Cluster summary
+
+Source: `data/missing_struts/analysis/cluster_summary.json`
+
+```json
+{
+  "method": "unsupervised raw-CT strut embedding clustering",
+  "defect_definition": "A defective strut is an expected registered-JSON strut assigned to a cluster that the local labeller subagent labels as weak. Weak struts are then subtyped as missing, broken, thin, or uncertain_weak from raw CT support-profile evidence.",
+  "cluster_metrics": {
+    "algorithm": "kmeans",
+    "selected_cluster_count": 2,
+    "silhouette_score": 0.39542695353317475,
+    "silhouette_by_k": {
+      "2": 0.39542695353317475,
+      "3": 0.3761038174745983,
+      "4": 0.33201155744931216,
+      "5": 0.32572292322108815
+    },
+    "cluster_stability": {
+      "mean_silhouette_across_seeds": 0.39542695353317475,
+      "min_silhouette_across_seeds": 0.39542695353317475,
+      "max_silhouette_across_seeds": 0.39542695353317475
+    }
+  },
+  "clusters": [
+    {
+      "cluster_id": 0,
+      "strut_count": 12619,
+      "mean_defect_score": 0.35683784000332486,
+      "mean_profile_mean": 0.46494614020165914,
+      "mean_profile_min": 0.31401196463376446,
+      "mean_longest_low_gap": 0.060464379110864566,
+      "mean_continuity_score": 0.9971207438518637,
+      "representative_strut_ids": [
+        2931,
+        4976,
+        2517,
+        12578,
+        9450,
+        12352,
+        8976,
+        15894
+      ],
+      "representative_profiles": [
+        [
+          0.79089,
+          0.6343,
+          0.42599,
+          0.23119,
+          0.11061,
+          0.07386,
+          0.08815,
+          0.12804,
+          0.18207,
+          0.24216,
+          0.29591,
+          0.34023,
+          0.38509,
+          0.43862,
+          0.46773,
+          0.48072,
+          0.55202,
+          0.71748,
+          0.86301,
+          0.90028,
+          0.81819
+        ],
+        [
+          0.79571,
+          0.63652,
+          0.46247,
+          0.2952,
+          0.15179,
+          0.08636,
+          0.08774,
+          0.11527,
+          0.16133,
+          0.21469,
+          0.27246,
+          0.32696,
+          0.37045,
+          0.4088,
+          0.432,
+          0.42997,
+          0.48359,
+          0.59466,
+          0.75398,
+          0.84785,
+          0.81651
+        ],
+        [
+          0.83514,
+          0.70999,
+          0.51449,
+          0.3349,
+          0.20106,
+          0.1303,
+          0.14948,
+          0.22753,
+          0.31439,
+          0.36407,
+          0.37757,
+          0.38512,
+          0.37604,
+          0.36369,
+          0.36065,
+          0.36842,
+          0.39847,
+          0.50016,
+          0.67701,
+          0.84153,
+          0.82737
+        ]
+      ]
+    },
+    {
+      "cluster_id": 1,
+      "strut_count": 5849,
+      "mean_defect_score": 0.5101256956660095,
+      "mean_profile_mean": 0.2611625024330019,
+      "mean_profile_min": 0.1163423698092687,
+      "mean_longest_low_gap": 2.92272183279193,
+      "mean_continuity_score": 0.8608227698670511,
+      "representative_strut_ids": [
+        18447,
+        18159,
+        18455,
+        18454,
+        17903,
+        18419,
+        14096,
+        17647
+      ],
+      "representative_profiles": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0201
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.00702,
+          0.01709,
+          0.02761,
+          0.03362,
+          0.02663,
+          0.00191,
+          0.0,
+          0.01206
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.00437,
+          0.01338,
+          0.02032,
+          0.02499,
+          0.02761,
+          0.02955,
+          0.03019,
+          0.0325,
+          0.03019,
+          0.02352
+        ]
+      ]
+    }
+  ]
+}
+```
+
+#### Cluster labels
+
+Source: `data/missing_struts/analysis/cluster_labels.json`
+
+```json
+{
+  "status": "passed",
+  "labeller": "local defect_labeler subagent",
+  "api_used": false,
+  "source": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_summary.json",
+  "cluster_labels": [
+    {
+      "cluster_id": 0,
+      "label": "present",
+      "confidence": 0.9,
+      "reason": "cluster has the lowest defect score and the most continuous raw CT support profile",
+      "evidence": {
+        "strut_count": 12619,
+        "mean_defect_score": 0.35683784000332486,
+        "mean_profile_mean": 0.46494614020165914,
+        "mean_profile_min": 0.31401196463376446,
+        "mean_longest_low_gap": 0.060464379110864566,
+        "mean_continuity_score": 0.9971207438518637,
+        "relative_defect_score": 0.0,
+        "representative_strut_ids": [
+          2931,
+          4976,
+          2517,
+          12578,
+          9450,
+          12352,
+          8976,
+          15894
+        ]
+      }
+    },
+    {
+      "cluster_id": 1,
+      "label": "weak",
+      "confidence": 0.8,
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "evidence": {
+        "strut_count": 5849,
+        "mean_defect_score": 0.5101256956660095,
+        "mean_profile_mean": 0.2611625024330019,
+        "mean_profile_min": 0.1163423698092687,
+        "mean_longest_low_gap": 2.92272183279193,
+        "mean_continuity_score": 0.8608227698670511,
+        "relative_defect_score": 0.15328785566268466,
+        "representative_strut_ids": [
+          18447,
+          18159,
+          18455,
+          18454,
+          17903,
+          18419,
+          14096,
+          17647
+        ]
+      }
+    }
+  ]
 }
 ```
 
@@ -385,921 +683,1120 @@ Source: `data/missing_struts/analysis/defect_visual_review/visual_review_index.j
 {
   "visual_panel_count": 100,
   "max_visual_panels": 100,
+  "panel_type": "raw CT strut support profile",
   "panels": [
     {
-      "strut_id": 1801,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01801_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01801_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01801_missing_profile.svg"
+      "strut_id": 18447,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8999999999883583,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18447_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18447_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 1884,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01884_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01884_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01884_missing_profile.svg"
+      "strut_id": 18159,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8979011126561091,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18159_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18159_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 1885,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01885_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01885_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01885_missing_profile.svg"
+      "strut_id": 18455,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8964905747212469,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18455_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18455_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 1912,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01912_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01912_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01912_missing_profile.svg"
+      "strut_id": 18454,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8918822124600411,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18454_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18454_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 1913,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01913_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01913_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01913_missing_profile.svg"
+      "strut_id": 17903,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8916213570162653,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_17903_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_17903_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 1914,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01914_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01914_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01914_missing_profile.svg"
-    },
-    {
-      "strut_id": 1968,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01968_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01968_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01968_missing_profile.svg"
-    },
-    {
-      "strut_id": 1970,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01970_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01970_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01970_missing_profile.svg"
-    },
-    {
-      "strut_id": 2000,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_02000_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_02000_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_02000_missing_profile.svg"
-    },
-    {
-      "strut_id": 3900,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03900_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03900_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03900_missing_profile.svg"
-    },
-    {
-      "strut_id": 3986,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03986_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03986_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03986_missing_profile.svg"
-    },
-    {
-      "strut_id": 5806,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05806_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05806_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05806_missing_profile.svg"
-    },
-    {
-      "strut_id": 5833,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05833_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05833_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05833_missing_profile.svg"
-    },
-    {
-      "strut_id": 5916,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05916_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05916_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05916_missing_profile.svg"
-    },
-    {
-      "strut_id": 5972,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05972_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05972_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05972_missing_profile.svg"
-    },
-    {
-      "strut_id": 5974,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05974_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05974_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05974_missing_profile.svg"
-    },
-    {
-      "strut_id": 6032,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_06032_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_06032_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_06032_missing_profile.svg"
-    },
-    {
-      "strut_id": 6034,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_06034_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_06034_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_06034_missing_profile.svg"
-    },
-    {
-      "strut_id": 7849,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07849_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07849_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07849_missing_profile.svg"
-    },
-    {
-      "strut_id": 7851,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07851_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07851_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07851_missing_profile.svg"
-    },
-    {
-      "strut_id": 7877,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07877_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07877_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07877_missing_profile.svg"
-    },
-    {
-      "strut_id": 7878,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07878_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07878_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07878_missing_profile.svg"
-    },
-    {
-      "strut_id": 7904,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07904_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07904_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07904_missing_profile.svg"
-    },
-    {
-      "strut_id": 8016,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08016_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08016_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08016_missing_profile.svg"
-    },
-    {
-      "strut_id": 8048,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08048_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08048_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08048_missing_profile.svg"
-    },
-    {
-      "strut_id": 8050,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08050_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08050_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08050_missing_profile.svg"
-    },
-    {
-      "strut_id": 8051,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08051_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08051_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08051_missing_profile.svg"
-    },
-    {
-      "strut_id": 9836,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09836_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09836_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09836_missing_profile.svg"
-    },
-    {
-      "strut_id": 9864,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09864_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09864_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09864_missing_profile.svg"
-    },
-    {
-      "strut_id": 10034,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10034_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10034_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10034_missing_profile.svg"
-    },
-    {
-      "strut_id": 11854,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11854_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11854_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11854_missing_profile.svg"
-    },
-    {
-      "strut_id": 11882,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11882_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11882_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11882_missing_profile.svg"
-    },
-    {
-      "strut_id": 11883,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11883_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11883_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11883_missing_profile.svg"
-    },
-    {
-      "strut_id": 11909,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11909_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11909_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11909_missing_profile.svg"
-    },
-    {
-      "strut_id": 11910,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11910_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11910_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11910_missing_profile.svg"
-    },
-    {
-      "strut_id": 12020,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12020_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_12020_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12020_missing_profile.svg"
-    },
-    {
-      "strut_id": 13868,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13868_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13868_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13868_missing_profile.svg"
-    },
-    {
-      "strut_id": 13869,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13869_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13869_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13869_missing_profile.svg"
-    },
-    {
-      "strut_id": 13870,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13870_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13870_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13870_missing_profile.svg"
-    },
-    {
-      "strut_id": 13896,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13896_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13896_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13896_missing_profile.svg"
-    },
-    {
-      "strut_id": 13899,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13899_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13899_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13899_missing_profile.svg"
-    },
-    {
-      "strut_id": 13924,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13924_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13924_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13924_missing_profile.svg"
-    },
-    {
-      "strut_id": 13925,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13925_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13925_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13925_missing_profile.svg"
-    },
-    {
-      "strut_id": 14008,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14008_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14008_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14008_missing_profile.svg"
-    },
-    {
-      "strut_id": 14037,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14037_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14037_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14037_missing_profile.svg"
-    },
-    {
-      "strut_id": 14038,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14038_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14038_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14038_missing_profile.svg"
+      "strut_id": 18419,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8880076033994556,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18419_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18419_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
       "strut_id": 14096,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14096_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14096_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14096_missing_profile.svg"
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8876162857748567,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14096_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14096_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 14098,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14098_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14098_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14098_missing_profile.svg"
+      "strut_id": 17647,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8875145373865961,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_17647_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_17647_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 15940,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15940_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15940_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15940_missing_profile.svg"
+      "strut_id": 18158,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8874007098376752,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18158_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18158_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 15941,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15941_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15941_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15941_missing_profile.svg"
+      "strut_id": 12080,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8871592039242387,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12080_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12080_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 15942,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15942_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15942_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15942_missing_profile.svg"
+      "strut_id": 11853,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8869494989514352,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11853_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11853_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 15943,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15943_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15943_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15943_missing_profile.svg"
-    },
-    {
-      "strut_id": 15970,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15970_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15970_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15970_missing_profile.svg"
-    },
-    {
-      "strut_id": 15971,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15971_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15971_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15971_missing_profile.svg"
-    },
-    {
-      "strut_id": 15996,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15996_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15996_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15996_missing_profile.svg"
-    },
-    {
-      "strut_id": 16024,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_16024_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_16024_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_16024_missing_profile.svg"
-    },
-    {
-      "strut_id": 18193,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18193_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18193_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18193_missing_profile.svg"
-    },
-    {
-      "strut_id": 18194,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18194_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18194_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18194_missing_profile.svg"
-    },
-    {
-      "strut_id": 18195,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18195_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18195_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18195_missing_profile.svg"
-    },
-    {
-      "strut_id": 18226,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18226_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18226_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18226_missing_profile.svg"
-    },
-    {
-      "strut_id": 18227,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18227_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18227_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18227_missing_profile.svg"
-    },
-    {
-      "strut_id": 18257,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18257_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18257_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18257_missing_profile.svg"
-    },
-    {
-      "strut_id": 18289,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18289_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18289_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18289_missing_profile.svg"
-    },
-    {
-      "strut_id": 18290,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18290_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18290_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18290_missing_profile.svg"
-    },
-    {
-      "strut_id": 18322,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18322_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18322_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18322_missing_profile.svg"
-    },
-    {
-      "strut_id": 18323,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.95,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18323_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18323_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18323_missing_profile.svg"
-    },
-    {
-      "strut_id": 1800,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01800_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01800_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01800_missing_profile.svg"
-    },
-    {
-      "strut_id": 1940,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01940_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01940_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01940_missing_profile.svg"
-    },
-    {
-      "strut_id": 1969,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01969_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01969_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01969_missing_profile.svg"
-    },
-    {
-      "strut_id": 2001,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_02001_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_02001_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_02001_missing_profile.svg"
-    },
-    {
-      "strut_id": 2002,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_02002_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_02002_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_02002_missing_profile.svg"
-    },
-    {
-      "strut_id": 3818,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03818_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03818_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03818_missing_profile.svg"
-    },
-    {
-      "strut_id": 3847,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03847_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03847_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03847_missing_profile.svg"
-    },
-    {
-      "strut_id": 3958,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03958_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03958_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03958_missing_profile.svg"
-    },
-    {
-      "strut_id": 3984,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03984_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03984_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03984_missing_profile.svg"
-    },
-    {
-      "strut_id": 4016,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_04016_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_04016_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_04016_missing_profile.svg"
-    },
-    {
-      "strut_id": 4018,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_04018_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_04018_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_04018_missing_profile.svg"
-    },
-    {
-      "strut_id": 5807,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05807_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05807_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05807_missing_profile.svg"
-    },
-    {
-      "strut_id": 5832,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05832_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05832_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05832_missing_profile.svg"
-    },
-    {
-      "strut_id": 5834,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05834_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05834_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05834_missing_profile.svg"
-    },
-    {
-      "strut_id": 5918,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05918_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05918_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05918_missing_profile.svg"
-    },
-    {
-      "strut_id": 5944,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05944_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05944_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05944_missing_profile.svg"
-    },
-    {
-      "strut_id": 6000,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_06000_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_06000_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_06000_missing_profile.svg"
-    },
-    {
-      "strut_id": 7820,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07820_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07820_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07820_missing_profile.svg"
-    },
-    {
-      "strut_id": 7821,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07821_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07821_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07821_missing_profile.svg"
-    },
-    {
-      "strut_id": 7848,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07848_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07848_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07848_missing_profile.svg"
-    },
-    {
-      "strut_id": 7876,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07876_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07876_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07876_missing_profile.svg"
-    },
-    {
-      "strut_id": 7934,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07934_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07934_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07934_missing_profile.svg"
-    },
-    {
-      "strut_id": 7962,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07962_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07962_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07962_missing_profile.svg"
-    },
-    {
-      "strut_id": 8018,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08018_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08018_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08018_missing_profile.svg"
-    },
-    {
-      "strut_id": 9867,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09867_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09867_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09867_missing_profile.svg"
-    },
-    {
-      "strut_id": 9921,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09921_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09921_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09921_missing_profile.svg"
-    },
-    {
-      "strut_id": 9923,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09923_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09923_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09923_missing_profile.svg"
-    },
-    {
-      "strut_id": 10006,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10006_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10006_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10006_missing_profile.svg"
-    },
-    {
-      "strut_id": 10032,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10032_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10032_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10032_missing_profile.svg"
+      "strut_id": 12082,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8867978440597654,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12082_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12082_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
       "strut_id": 10064,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10064_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10064_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10064_missing_profile.svg"
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8867608441971243,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10064_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10064_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
       "strut_id": 11855,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11855_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11855_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11855_missing_profile.svg"
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8865815794095396,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11855_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11855_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
-      "strut_id": 11936,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11936_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11936_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11936_missing_profile.svg"
+      "strut_id": 13897,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8865569587796925,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13897_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13897_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13899,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8863253608345986,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13899_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13899_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13926,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8863180097192526,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13926_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13926_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11966,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8862778028473258,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11966_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11966_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 18452,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8862575335428119,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18452_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18452_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14098,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8861972730606794,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14098_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14098_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 12022,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8861877614632249,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12022_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12022_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
       "strut_id": 11938,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11938_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11938_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11938_missing_profile.svg"
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.886146206408739,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11938_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11938_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11911,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.886127202771604,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11911_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11911_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13868,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8861207552254199,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13868_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13868_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9920,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8861132320016621,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09920_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09920_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13869,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8861001504585148,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13869_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13869_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 12020,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8860869841650129,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12020_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12020_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9922,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8860708085820078,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09922_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09922_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14066,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.886055041104555,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14066_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14066_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14038,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8860440013930201,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14038_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14038_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9867,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8860383335500955,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09867_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09867_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13982,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8860292300581932,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13982_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13982_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 12050,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8860083384439349,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12050_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12050_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11908,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.885991450957954,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11908_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11908_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11994,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8859870556741952,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11994_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11994_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9978,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8859859786927701,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09978_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09978_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13954,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8859719075262545,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13954_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13954_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13871,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8859582901000976,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13871_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13871_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13927,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8859491292387246,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13927_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13927_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 16112,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8859123645350336,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_16112_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_16112_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9894,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8858940036967397,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09894_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09894_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14010,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8858816796913743,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14010_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14010_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9950,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8858671704307198,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09950_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09950_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13898,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.885835175216198,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13898_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13898_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13924,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8858232906088234,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13924_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13924_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7851,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8857996817678212,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07851_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07851_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14064,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8857985474169253,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14064_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14064_weak_missing_profile.svg",
+      "visual_evidence_png": null
     },
     {
       "strut_id": 11964,
-      "classification": "missing",
-      "visual_classification": "missing",
-      "visual_confidence": 0.85,
-      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11964_missing.svg",
-      "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11964_missing.png",
-      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11964_missing_profile.svg"
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8857393942773343,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11964_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11964_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11936,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8857365231961011,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11936_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11936_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9837,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8857219302444718,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09837_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09837_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14008,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8856946643441915,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14008_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14008_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 15913,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8856827719137071,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15913_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15913_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 15941,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8856752838939429,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15941_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15941_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11880,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8856340704485773,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11880_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11880_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9864,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8856230881065129,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09864_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09864_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9892,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8856178674846887,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09892_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09892_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9839,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8855874629691244,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09839_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09839_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9893,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8855728246271609,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09893_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09893_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11881,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8855533268302679,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11881_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11881_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13980,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8855500632897019,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13980_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13980_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14036,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8855224072933198,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14036_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14036_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11882,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8854867130517959,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11882_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11882_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 15887,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8854647357249633,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15887_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15887_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7906,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8854638252407313,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07906_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07906_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11852,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8854608511552214,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11852_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11852_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7934,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.885460433922708,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07934_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07934_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 8048,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8854510552482681,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08048_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08048_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11883,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8854219768196344,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11883_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11883_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13870,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8853808142244816,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13870_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13870_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9976,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8853685423731804,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09976_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09976_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9948,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8853605458512902,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09948_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09948_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 10004,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8853555807843804,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10004_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10004_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13952,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8853236872702838,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13952_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13952_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9866,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8853035870939493,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09866_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09866_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11910,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852948512881994,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11910_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11910_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9865,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852929880842567,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09865_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09865_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 12075,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852917850017549,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12075_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12075_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 5918,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852671965956688,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05918_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05918_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 5807,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.88525169249624,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05807_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05807_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13896,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852439749985933,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13896_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13896_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13953,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852366369217634,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13953_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13953_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 14091,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852361558005214,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14091_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14091_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 10034,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852186020463705,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10034_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10034_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11909,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852058934047818,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11909_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11909_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7878,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8852000521495939,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07878_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07878_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13955,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851855754852295,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13955_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13955_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7960,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851833237335086,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07960_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07960_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 9895,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.885181918181479,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09895_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09895_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 18445,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851696588099002,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18445_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18445_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13983,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851593980565667,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13983_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13983_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 11939,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851578569039703,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11939_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11939_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 5835,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.88514947835356,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05835_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05835_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7848,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851311031728982,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07848_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07848_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7932,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851233556866646,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07932_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07932_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7904,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8851118935272096,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07904_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07904_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 5805,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8850950712338089,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05805_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05805_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 15884,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.885089035704732,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15884_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15884_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 13925,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8850301433354616,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13925_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13925_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 10032,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8849855735898019,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10032_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10032_weak_missing_profile.svg",
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7990,
+      "cluster_id": 1,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "defect_score": 0.8849774503847584,
+      "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07990_weak_missing_profile.svg",
+      "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07990_weak_missing_profile.svg",
+      "visual_evidence_png": null
     }
   ]
 }
 ```
 
-#### Hugging Face model review results
+#### External model review compatibility record
 
 Source: `data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json`
 
 ```json
 {
   "status": "skipped",
-  "reason": "DEFECT_HF_REVIEW_LIMIT is 0",
-  "model": "zai-org/GLM-4.5V",
-  "requested_limit": 0,
+  "reason": "No external LLM/API review was used; cluster labels came from the local defect_labeler subagent.",
   "reviews": []
 }
 ```
@@ -1313,19 +1810,84 @@ Source: `data/missing_struts/analysis/per_strut_defects.json`
   "total_records": 18468,
   "first_10_anomalies": [
     {
-      "strut_id": 0,
-      "classification": "missing",
-      "reason": "material profile is low across the expected strut",
-      "coverage_ratio": 0.18181818181818182,
-      "profile_classification": "missing",
-      "profile_mean": 0.09,
+      "strut_id": 4,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.22134053707122803,
+      "profile_mean": 0.22134053707122803,
       "profile_min": 0.0,
       "low_profile_segments": [
         0,
         1,
         2,
+        3
+      ],
+      "longest_low_profile_gap": 4,
+      "profile_plot": null,
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 5,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.2445039004087448,
+      "profile_mean": 0.2445039004087448,
+      "profile_min": 0.07156158238649368,
+      "low_profile_segments": [
+        2,
         3,
-        4,
+        4
+      ],
+      "longest_low_profile_gap": 3,
+      "profile_plot": null,
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 7,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.2969948947429657,
+      "profile_mean": 0.2969948947429657,
+      "profile_min": 0.19451622664928436,
+      "low_profile_segments": [],
+      "longest_low_profile_gap": 0,
+      "profile_plot": null,
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 8,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.3425348401069641,
+      "profile_mean": 0.3425348401069641,
+      "profile_min": 0.0,
+      "low_profile_segments": [
+        0,
+        1,
+        2
+      ],
+      "longest_low_profile_gap": 3,
+      "profile_plot": null,
+      "visual_evidence_png": null
+    },
+    {
+      "strut_id": 10,
+      "classification": "weak",
+      "weak_subtype": "missing",
+      "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.15391932427883148,
+      "profile_mean": 0.15391932427883148,
+      "profile_min": 0.09002082794904709,
+      "low_profile_segments": [
         5,
         6,
         7,
@@ -1339,191 +1901,77 @@ Source: `data/missing_struts/analysis/per_strut_defects.json`
         15,
         16
       ],
-      "longest_low_profile_gap": 17,
-      "profile_plot": null,
-      "visual_evidence_png": null
-    },
-    {
-      "strut_id": 1,
-      "classification": "disconnected",
-      "reason": "endpoints have support but one or more middle segments drop below threshold",
-      "coverage_ratio": 0.5454545454545454,
-      "profile_classification": "broken",
-      "profile_mean": 0.24,
-      "profile_min": 0.0,
-      "low_profile_segments": [
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
-      ],
       "longest_low_profile_gap": 12,
       "profile_plot": null,
       "visual_evidence_png": null
     },
     {
-      "strut_id": 2,
-      "classification": "disconnected",
-      "reason": "endpoints have support but one or more middle segments drop below threshold",
-      "coverage_ratio": 0.45454545454545453,
-      "profile_classification": "broken",
-      "profile_mean": 0.33562870818962093,
-      "profile_min": 0.0,
-      "low_profile_segments": [
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14
-      ],
-      "longest_low_profile_gap": 11,
-      "profile_plot": null,
-      "visual_evidence_png": null
-    },
-    {
-      "strut_id": 3,
-      "classification": "disconnected",
-      "reason": "endpoints have support but one or more middle segments drop below threshold",
-      "coverage_ratio": 0.45454545454545453,
-      "profile_classification": "broken",
-      "profile_mean": 0.26999999999999996,
-      "profile_min": 0.0,
-      "low_profile_segments": [
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14
-      ],
-      "longest_low_profile_gap": 11,
-      "profile_plot": null,
-      "visual_evidence_png": null
-    },
-    {
-      "strut_id": 4,
-      "classification": "disconnected",
-      "reason": "endpoints have support but one or more middle segments drop below threshold",
-      "coverage_ratio": 0.5454545454545454,
-      "profile_classification": "broken",
-      "profile_mean": 0.4016513716513142,
-      "profile_min": 0.0,
-      "low_profile_segments": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9
-      ],
-      "longest_low_profile_gap": 10,
-      "profile_plot": null,
-      "visual_evidence_png": null
-    },
-    {
-      "strut_id": 5,
-      "classification": "disconnected",
-      "reason": "skeleton material is nearby, but no observed path connects both expected endpoints",
-      "coverage_ratio": 1.0,
-      "profile_classification": "continuous",
-      "profile_mean": 0.7193620069153536,
-      "profile_min": 0.6,
+      "strut_id": 107,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.3330414295196533,
+      "profile_mean": 0.3330414295196533,
+      "profile_min": 0.24089112877845764,
       "low_profile_segments": [],
       "longest_low_profile_gap": 0,
       "profile_plot": null,
       "visual_evidence_png": null
     },
     {
-      "strut_id": 7,
-      "classification": "disconnected",
-      "reason": "skeleton material is nearby, but no observed path connects both expected endpoints",
-      "coverage_ratio": 1.0,
-      "profile_classification": "continuous",
-      "profile_mean": 0.8609133599314905,
-      "profile_min": 0.7,
+      "strut_id": 131,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.2953636646270752,
+      "profile_mean": 0.2953636646270752,
+      "profile_min": 0.19817933440208435,
       "low_profile_segments": [],
       "longest_low_profile_gap": 0,
       "profile_plot": null,
       "visual_evidence_png": null
     },
     {
-      "strut_id": 8,
-      "classification": "disconnected",
-      "reason": "endpoints have support but one or more middle segments drop below threshold",
-      "coverage_ratio": 0.7272727272727273,
-      "profile_classification": "broken",
-      "profile_mean": 0.6267982511152294,
-      "profile_min": 0.0,
-      "low_profile_segments": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ],
-      "longest_low_profile_gap": 5,
+      "strut_id": 155,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.24471455812454224,
+      "profile_mean": 0.24471455812454224,
+      "profile_min": 0.1384022831916809,
+      "low_profile_segments": [],
+      "longest_low_profile_gap": 0,
       "profile_plot": null,
       "visual_evidence_png": null
     },
     {
-      "strut_id": 9,
-      "classification": "disconnected",
-      "reason": "skeleton material is nearby, but no observed path connects both expected endpoints",
-      "coverage_ratio": 0.9090909090909091,
-      "profile_classification": "weak",
-      "profile_mean": 0.6932441050820582,
-      "profile_min": 0.0,
-      "low_profile_segments": [
-        12
-      ],
-      "longest_low_profile_gap": 1,
+      "strut_id": 156,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.3416946828365326,
+      "profile_mean": 0.3416946828365326,
+      "profile_min": 0.18491539359092712,
+      "low_profile_segments": [],
+      "longest_low_profile_gap": 0,
       "profile_plot": null,
       "visual_evidence_png": null
     },
     {
-      "strut_id": 10,
-      "classification": "disconnected",
-      "reason": "endpoints have support but one or more middle segments drop below threshold",
-      "coverage_ratio": 0.5454545454545454,
-      "profile_classification": "broken",
-      "profile_mean": 0.43499999999999994,
-      "profile_min": 0.0,
-      "low_profile_segments": [
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14
-      ],
-      "longest_low_profile_gap": 10,
+      "strut_id": 161,
+      "classification": "weak",
+      "weak_subtype": "thin",
+      "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+      "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+      "coverage_ratio": 0.35376086831092834,
+      "profile_mean": 0.35376086831092834,
+      "profile_min": 0.16599097847938538,
+      "low_profile_segments": [],
+      "longest_low_profile_gap": 0,
       "profile_plot": null,
       "visual_evidence_png": null
     }
@@ -1537,46 +1985,35 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
 
 # Defect Detection Summary
 
+- Method: **unsupervised raw-CT strut embedding clustering with local labeller subagent**
 - Expected struts: **18468**
-- Observed skeleton struts: **19824**
-- Present struts: **16258**
-- Weak struts: **0**
-- Missing struts: **314**
-- Disconnected struts: **1896**
-- Confirmed anomalies: **2210**
-- Confirmed anomaly percentage: **11.97%**
-- Profile segments per strut: **20**
-- Profile classification counts: `{'broken': 658, 'continuous': 17193, 'missing': 314, 'weak': 303}`
-- Visual review panels generated: **100**
-- Visual review index: `/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/visual_review_index.json`
-- Hugging Face model reviews: **0**
-- Hugging Face model review results: `/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json`
+- Selected clusters: **2**
+- Silhouette score: **0.39542695353317475**
+- Present struts: **12619**
+- Weak struts: **5849**
+- Weak/missing subtype: **640**
+- Weak/broken subtype: **328**
+- Weak/thin subtype: **4770**
+- Weak/uncertain subtype: **111**
+- Confirmed defects: **5849**
+- Confirmed defect percentage: **31.67%**
+- Nominal defect-rate comparison: **detected 31.67% vs nominal 0.5-1.0%**
 
-## Decision Rules
+## Defective Strut Definition
 
-- Each expected strut is sampled at 11 evenly spaced points.
-- A sample is covered when an observed skeleton point is within 12 voxels.
-- `present`: coverage is at least 65% and the same observed skeleton path reaches both endpoints.
-- `missing`: coverage is 10% or less.
-- `disconnected`: coverage is at least 25%, but no observed path connects both endpoints.
-- `weak`: partial coverage remains below the present threshold.
+A defective strut is an expected registered-JSON strut assigned to a cluster that the local labeller subagent labels as weak. Weak struts are then subtyped as missing, broken, thin, or uncertain_weak from raw CT support-profile evidence.
 
-## Node-to-Node Material Profile
+## Performance Metric
 
-- Each expected JSON edge is divided into 20 equal segments from node x to node y.
-- Each segment receives a support value from nearby observed skeleton evidence within 12 voxels.
-- Segment values below 0.20 are low-support regions.
-- `missing`: the profile is low across the expected strut.
-- `disconnected`: endpoints have support, but a middle low-support gap appears.
-- `weak`: the profile has partial support or isolated low-support segments.
-- `continuous`: the profile is supported along the expected edge.
+- Primary metric: unsupervised cluster validity from silhouette score and seed-stability statistics.
+- Nominal 0.5-1% defect rate is included only as contextual comparison, not as the performance metric.
 
-## Visual Review Layer
+## Labeller Subagent
 
-- Candidate anomalies are rendered as SVG panels with two projections: XY and XZ.
-- Red/orange/purple lines show the expected strut; blue points show nearby observed skeleton evidence.
-- The visual label is derived from the same panel evidence and stored per strut.
-- When `HUGGINGFACE_API_KEY` is set and `DEFECT_HF_REVIEW_LIMIT` is greater than 0, candidate panels are sent to the configured Hugging Face vision-language model.
+- Cluster labels: `/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_labels.json`
+- Labels were assigned after clustering by the local labeller subagent from saved cluster summaries.
+- Weak struts were further subtyped from per-strut raw CT support profiles.
+- No external LLM/API review was used.
 
 
 ### Summary Card
@@ -1586,39 +2023,49 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
   "step": "Detecting Defects",
   "subagent": ".codex/agents/defect_detection",
   "status": "passed",
-  "command": "/home/mtrev008/miniconda3/bin/python -B .codex/agents/defect_detection/run.py",
-  "stdout": "Detecting Defects pipeline step\n{\"status\": \"passed\", \"reference_json\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/registered_jsons/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json\", \"observed_json\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/observed_lattice.json\", \"per_strut_json\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/per_strut_defects.json\", \"summary\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/anomaly_summary.md\", \"method\": \"expected-strut skeleton coverage and endpoint-connectivity test\", \"expected_struts\": 18468, \"observed_struts\": 19824, \"classification_counts\": {\"disconnected\": 1896, \"missing\": 314, \"present\": 16258}, \"graph_candidates\": 2210, \"weak_segmentation_candidates\": 0, \"confirmed_anomalies\": 2210, \"confirmed_anomaly_percentage\": 11.96664500758068, \"sample_count\": 11, \"search_radius_voxels\": 12.0, \"profile_segments\": 20, \"low_profile_threshold\": 0.2, \"profile_classification_counts\": {\"broken\": 658, \"continuous\": 17193, \"missing\": 314, \"weak\": 303}, \"visual_review_dir\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review\", \"visual_review_index\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/visual_review_index.json\", \"visual_review_panels\": 100, \"visual_classification_counts\": {\"missing\": 100}, \"hf_model_review_results\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json\", \"hf_model_review_count\": 0, \"hf_model\": \"zai-org/GLM-4.5V\", \"hf_model_classification_counts\": {}}",
+  "command": "/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/defect_detection/run.py",
+  "stdout": "Detecting Defects pipeline step\n{\"status\": \"passed\", \"reference_json\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/registered_jsons/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json\", \"tif_stack\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif\", \"per_strut_json\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/per_strut_defects.json\", \"summary\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/anomaly_summary.md\", \"method\": \"unsupervised raw-CT strut embedding clustering with local labeller subagent\", \"defect_definition\": \"A defective strut is an expected registered-JSON strut assigned to a cluster that the local labeller subagent labels as weak. Weak struts are then subtyped as missing, broken, thin, or uncertain_weak from raw CT support-profile evidence.\", \"expected_struts\": 18468, \"observed_struts\": null, \"selected_cluster_count\": 2, \"silhouette_score\": 0.39542695353317475, \"cluster_metrics\": {\"algorithm\": \"kmeans\", \"selected_cluster_count\": 2, \"silhouette_score\": 0.39542695353317475, \"silhouette_by_k\": {\"2\": 0.39542695353317475, \"3\": 0.3761038174745983, \"4\": 0.33201155744931216, \"5\": 0.32572292322108815}, \"cluster_stability\": {\"mean_silhouette_across_seeds\": 0.39542695353317475, \"min_silhouette_across_seeds\": 0.39542695353317475, \"max_silhouette_across_seeds\": 0.39542695353317475}}, \"cluster_summary_json\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_summary.json\", \"cluster_labels_json\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_labels.json\", \"classification_counts\": {\"present\": 12619, \"weak\": 5849}, \"weak_subtype_counts\": {\"broken\": 328, \"missing\": 640, \"thin\": 4770, \"uncertain_weak\": 111}, \"confirmed_weak_subtypes\": [\"missing\", \"broken\", \"thin\", \"uncertain_weak\"], \"graph_candidates\": 968, \"weak_segmentation_candidates\": 5849, \"confirmed_anomalies\": 5849, \"confirmed_anomaly_percentage\": 31.670998483863983, \"nominal_rate_comparison\": \"detected 31.67% vs nominal 0.5-1.0%\", \"sample_count\": 21, \"patch_radius_voxels\": 3, \"profile_segments\": 21, \"visual_review_dir\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review\", \"visual_review_index\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/visual_review_index.json\", \"visual_review_panels\": 100, \"hf_model_review_results\": \"/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json\", \"hf_model_review_count\": 0, \"hf_model\": null}",
   "stderr": "",
   "outputs": [
     {
       "path": "data/missing_struts/analysis/observed_lattice.json",
       "exists": true,
-      "size_bytes": 48419091
+      "size_bytes": 204
+    },
+    {
+      "path": "data/missing_struts/analysis/cluster_summary.json",
+      "exists": true,
+      "size_bytes": 4190
+    },
+    {
+      "path": "data/missing_struts/analysis/cluster_labels.json",
+      "exists": true,
+      "size_bytes": 1692
     },
     {
       "path": "data/missing_struts/analysis/per_strut_defects.json",
       "exists": true,
-      "size_bytes": 26388433
+      "size_bytes": 38612515
     },
     {
       "path": "data/missing_struts/analysis/anomaly_summary.json",
       "exists": true,
-      "size_bytes": 1893
+      "size_bytes": 3045
     },
     {
       "path": "data/missing_struts/analysis/anomaly_summary.md",
       "exists": true,
-      "size_bytes": 2291
+      "size_bytes": 1414
     },
     {
       "path": "data/missing_struts/analysis/defect_visual_review/visual_review_index.json",
       "exists": true,
-      "size_bytes": 46221
+      "size_bytes": 52283
     },
     {
       "path": "data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json",
       "exists": true,
-      "size_bytes": 140
+      "size_bytes": 154
     }
   ],
   "results": [
@@ -1627,41 +2074,331 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
       "source": "data/missing_struts/analysis/anomaly_summary.json",
       "content": {
         "reference_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/registered_jsons/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json",
-        "observed_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/observed_lattice.json",
+        "tif_stack": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
         "per_strut_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/per_strut_defects.json",
         "summary": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/anomaly_summary.md",
-        "method": "expected-strut skeleton coverage and endpoint-connectivity test",
+        "method": "unsupervised raw-CT strut embedding clustering with local labeller subagent",
+        "defect_definition": "A defective strut is an expected registered-JSON strut assigned to a cluster that the local labeller subagent labels as weak. Weak struts are then subtyped as missing, broken, thin, or uncertain_weak from raw CT support-profile evidence.",
         "expected_struts": 18468,
-        "observed_struts": 19824,
+        "observed_struts": null,
+        "selected_cluster_count": 2,
+        "silhouette_score": 0.39542695353317475,
+        "cluster_metrics": {
+          "algorithm": "kmeans",
+          "selected_cluster_count": 2,
+          "silhouette_score": 0.39542695353317475,
+          "silhouette_by_k": {
+            "2": 0.39542695353317475,
+            "3": 0.3761038174745983,
+            "4": 0.33201155744931216,
+            "5": 0.32572292322108815
+          },
+          "cluster_stability": {
+            "mean_silhouette_across_seeds": 0.39542695353317475,
+            "min_silhouette_across_seeds": 0.39542695353317475,
+            "max_silhouette_across_seeds": 0.39542695353317475
+          }
+        },
+        "cluster_summary_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_summary.json",
+        "cluster_labels_json": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_labels.json",
         "classification_counts": {
-          "disconnected": 1896,
-          "missing": 314,
-          "present": 16258
+          "present": 12619,
+          "weak": 5849
         },
-        "graph_candidates": 2210,
-        "weak_segmentation_candidates": 0,
-        "confirmed_anomalies": 2210,
-        "confirmed_anomaly_percentage": 11.96664500758068,
-        "sample_count": 11,
-        "search_radius_voxels": 12.0,
-        "profile_segments": 20,
-        "low_profile_threshold": 0.2,
-        "profile_classification_counts": {
-          "broken": 658,
-          "continuous": 17193,
-          "missing": 314,
-          "weak": 303
+        "weak_subtype_counts": {
+          "broken": 328,
+          "missing": 640,
+          "thin": 4770,
+          "uncertain_weak": 111
         },
+        "confirmed_weak_subtypes": [
+          "missing",
+          "broken",
+          "thin",
+          "uncertain_weak"
+        ],
+        "graph_candidates": 968,
+        "weak_segmentation_candidates": 5849,
+        "confirmed_anomalies": 5849,
+        "confirmed_anomaly_percentage": 31.670998483863983,
+        "nominal_rate_comparison": "detected 31.67% vs nominal 0.5-1.0%",
+        "sample_count": 21,
+        "patch_radius_voxels": 3,
+        "profile_segments": 21,
         "visual_review_dir": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review",
         "visual_review_index": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/visual_review_index.json",
         "visual_review_panels": 100,
-        "visual_classification_counts": {
-          "missing": 100
-        },
         "hf_model_review_results": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json",
         "hf_model_review_count": 0,
-        "hf_model": "zai-org/GLM-4.5V",
-        "hf_model_classification_counts": {}
+        "hf_model": null
+      }
+    },
+    {
+      "title": "Cluster summary",
+      "source": "data/missing_struts/analysis/cluster_summary.json",
+      "content": {
+        "method": "unsupervised raw-CT strut embedding clustering",
+        "defect_definition": "A defective strut is an expected registered-JSON strut assigned to a cluster that the local labeller subagent labels as weak. Weak struts are then subtyped as missing, broken, thin, or uncertain_weak from raw CT support-profile evidence.",
+        "cluster_metrics": {
+          "algorithm": "kmeans",
+          "selected_cluster_count": 2,
+          "silhouette_score": 0.39542695353317475,
+          "silhouette_by_k": {
+            "2": 0.39542695353317475,
+            "3": 0.3761038174745983,
+            "4": 0.33201155744931216,
+            "5": 0.32572292322108815
+          },
+          "cluster_stability": {
+            "mean_silhouette_across_seeds": 0.39542695353317475,
+            "min_silhouette_across_seeds": 0.39542695353317475,
+            "max_silhouette_across_seeds": 0.39542695353317475
+          }
+        },
+        "clusters": [
+          {
+            "cluster_id": 0,
+            "strut_count": 12619,
+            "mean_defect_score": 0.35683784000332486,
+            "mean_profile_mean": 0.46494614020165914,
+            "mean_profile_min": 0.31401196463376446,
+            "mean_longest_low_gap": 0.060464379110864566,
+            "mean_continuity_score": 0.9971207438518637,
+            "representative_strut_ids": [
+              2931,
+              4976,
+              2517,
+              12578,
+              9450,
+              12352,
+              8976,
+              15894
+            ],
+            "representative_profiles": [
+              [
+                0.79089,
+                0.6343,
+                0.42599,
+                0.23119,
+                0.11061,
+                0.07386,
+                0.08815,
+                0.12804,
+                0.18207,
+                0.24216,
+                0.29591,
+                0.34023,
+                0.38509,
+                0.43862,
+                0.46773,
+                0.48072,
+                0.55202,
+                0.71748,
+                0.86301,
+                0.90028,
+                0.81819
+              ],
+              [
+                0.79571,
+                0.63652,
+                0.46247,
+                0.2952,
+                0.15179,
+                0.08636,
+                0.08774,
+                0.11527,
+                0.16133,
+                0.21469,
+                0.27246,
+                0.32696,
+                0.37045,
+                0.4088,
+                0.432,
+                0.42997,
+                0.48359,
+                0.59466,
+                0.75398,
+                0.84785,
+                0.81651
+              ],
+              [
+                0.83514,
+                0.70999,
+                0.51449,
+                0.3349,
+                0.20106,
+                0.1303,
+                0.14948,
+                0.22753,
+                0.31439,
+                0.36407,
+                0.37757,
+                0.38512,
+                0.37604,
+                0.36369,
+                0.36065,
+                0.36842,
+                0.39847,
+                0.50016,
+                0.67701,
+                0.84153,
+                0.82737
+              ]
+            ]
+          },
+          {
+            "cluster_id": 1,
+            "strut_count": 5849,
+            "mean_defect_score": 0.5101256956660095,
+            "mean_profile_mean": 0.2611625024330019,
+            "mean_profile_min": 0.1163423698092687,
+            "mean_longest_low_gap": 2.92272183279193,
+            "mean_continuity_score": 0.8608227698670511,
+            "representative_strut_ids": [
+              18447,
+              18159,
+              18455,
+              18454,
+              17903,
+              18419,
+              14096,
+              17647
+            ],
+            "representative_profiles": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0201
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.00702,
+                0.01709,
+                0.02761,
+                0.03362,
+                0.02663,
+                0.00191,
+                0.0,
+                0.01206
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.00437,
+                0.01338,
+                0.02032,
+                0.02499,
+                0.02761,
+                0.02955,
+                0.03019,
+                0.0325,
+                0.03019,
+                0.02352
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Cluster labels",
+      "source": "data/missing_struts/analysis/cluster_labels.json",
+      "content": {
+        "status": "passed",
+        "labeller": "local defect_labeler subagent",
+        "api_used": false,
+        "source": "/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_summary.json",
+        "cluster_labels": [
+          {
+            "cluster_id": 0,
+            "label": "present",
+            "confidence": 0.9,
+            "reason": "cluster has the lowest defect score and the most continuous raw CT support profile",
+            "evidence": {
+              "strut_count": 12619,
+              "mean_defect_score": 0.35683784000332486,
+              "mean_profile_mean": 0.46494614020165914,
+              "mean_profile_min": 0.31401196463376446,
+              "mean_longest_low_gap": 0.060464379110864566,
+              "mean_continuity_score": 0.9971207438518637,
+              "relative_defect_score": 0.0,
+              "representative_strut_ids": [
+                2931,
+                4976,
+                2517,
+                12578,
+                9450,
+                12352,
+                8976,
+                15894
+              ]
+            }
+          },
+          {
+            "cluster_id": 1,
+            "label": "weak",
+            "confidence": 0.8,
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "evidence": {
+              "strut_count": 5849,
+              "mean_defect_score": 0.5101256956660095,
+              "mean_profile_mean": 0.2611625024330019,
+              "mean_profile_min": 0.1163423698092687,
+              "mean_longest_low_gap": 2.92272183279193,
+              "mean_continuity_score": 0.8608227698670511,
+              "relative_defect_score": 0.15328785566268466,
+              "representative_strut_ids": [
+                18447,
+                18159,
+                18455,
+                18454,
+                17903,
+                18419,
+                14096,
+                17647
+              ]
+            }
+          }
+        ]
       }
     },
     {
@@ -1670,918 +2407,1117 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
       "content": {
         "visual_panel_count": 100,
         "max_visual_panels": 100,
+        "panel_type": "raw CT strut support profile",
         "panels": [
           {
-            "strut_id": 1801,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01801_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01801_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01801_missing_profile.svg"
+            "strut_id": 18447,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8999999999883583,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18447_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18447_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 1884,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01884_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01884_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01884_missing_profile.svg"
+            "strut_id": 18159,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8979011126561091,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18159_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18159_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 1885,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01885_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01885_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01885_missing_profile.svg"
+            "strut_id": 18455,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8964905747212469,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18455_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18455_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 1912,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01912_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01912_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01912_missing_profile.svg"
+            "strut_id": 18454,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8918822124600411,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18454_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18454_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 1913,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01913_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01913_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01913_missing_profile.svg"
+            "strut_id": 17903,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8916213570162653,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_17903_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_17903_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 1914,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01914_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01914_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01914_missing_profile.svg"
-          },
-          {
-            "strut_id": 1968,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01968_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01968_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01968_missing_profile.svg"
-          },
-          {
-            "strut_id": 1970,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01970_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01970_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01970_missing_profile.svg"
-          },
-          {
-            "strut_id": 2000,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_02000_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_02000_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_02000_missing_profile.svg"
-          },
-          {
-            "strut_id": 3900,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03900_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03900_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03900_missing_profile.svg"
-          },
-          {
-            "strut_id": 3986,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03986_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03986_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03986_missing_profile.svg"
-          },
-          {
-            "strut_id": 5806,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05806_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05806_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05806_missing_profile.svg"
-          },
-          {
-            "strut_id": 5833,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05833_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05833_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05833_missing_profile.svg"
-          },
-          {
-            "strut_id": 5916,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05916_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05916_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05916_missing_profile.svg"
-          },
-          {
-            "strut_id": 5972,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05972_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05972_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05972_missing_profile.svg"
-          },
-          {
-            "strut_id": 5974,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05974_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05974_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05974_missing_profile.svg"
-          },
-          {
-            "strut_id": 6032,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_06032_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_06032_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_06032_missing_profile.svg"
-          },
-          {
-            "strut_id": 6034,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_06034_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_06034_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_06034_missing_profile.svg"
-          },
-          {
-            "strut_id": 7849,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07849_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07849_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07849_missing_profile.svg"
-          },
-          {
-            "strut_id": 7851,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07851_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07851_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07851_missing_profile.svg"
-          },
-          {
-            "strut_id": 7877,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07877_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07877_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07877_missing_profile.svg"
-          },
-          {
-            "strut_id": 7878,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07878_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07878_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07878_missing_profile.svg"
-          },
-          {
-            "strut_id": 7904,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07904_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07904_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07904_missing_profile.svg"
-          },
-          {
-            "strut_id": 8016,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08016_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08016_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08016_missing_profile.svg"
-          },
-          {
-            "strut_id": 8048,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08048_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08048_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08048_missing_profile.svg"
-          },
-          {
-            "strut_id": 8050,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08050_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08050_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08050_missing_profile.svg"
-          },
-          {
-            "strut_id": 8051,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08051_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08051_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08051_missing_profile.svg"
-          },
-          {
-            "strut_id": 9836,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09836_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09836_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09836_missing_profile.svg"
-          },
-          {
-            "strut_id": 9864,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09864_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09864_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09864_missing_profile.svg"
-          },
-          {
-            "strut_id": 10034,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10034_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10034_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10034_missing_profile.svg"
-          },
-          {
-            "strut_id": 11854,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11854_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11854_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11854_missing_profile.svg"
-          },
-          {
-            "strut_id": 11882,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11882_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11882_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11882_missing_profile.svg"
-          },
-          {
-            "strut_id": 11883,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11883_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11883_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11883_missing_profile.svg"
-          },
-          {
-            "strut_id": 11909,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11909_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11909_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11909_missing_profile.svg"
-          },
-          {
-            "strut_id": 11910,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11910_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11910_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11910_missing_profile.svg"
-          },
-          {
-            "strut_id": 12020,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12020_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_12020_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12020_missing_profile.svg"
-          },
-          {
-            "strut_id": 13868,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13868_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13868_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13868_missing_profile.svg"
-          },
-          {
-            "strut_id": 13869,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13869_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13869_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13869_missing_profile.svg"
-          },
-          {
-            "strut_id": 13870,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13870_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13870_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13870_missing_profile.svg"
-          },
-          {
-            "strut_id": 13896,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13896_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13896_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13896_missing_profile.svg"
-          },
-          {
-            "strut_id": 13899,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13899_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13899_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13899_missing_profile.svg"
-          },
-          {
-            "strut_id": 13924,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13924_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13924_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13924_missing_profile.svg"
-          },
-          {
-            "strut_id": 13925,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13925_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_13925_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13925_missing_profile.svg"
-          },
-          {
-            "strut_id": 14008,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14008_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14008_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14008_missing_profile.svg"
-          },
-          {
-            "strut_id": 14037,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14037_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14037_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14037_missing_profile.svg"
-          },
-          {
-            "strut_id": 14038,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14038_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14038_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14038_missing_profile.svg"
+            "strut_id": 18419,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8880076033994556,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18419_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18419_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
             "strut_id": 14096,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14096_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14096_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14096_missing_profile.svg"
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8876162857748567,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14096_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14096_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 14098,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14098_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_14098_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14098_missing_profile.svg"
+            "strut_id": 17647,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8875145373865961,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_17647_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_17647_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 15940,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15940_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15940_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15940_missing_profile.svg"
+            "strut_id": 18158,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8874007098376752,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18158_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18158_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 15941,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15941_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15941_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15941_missing_profile.svg"
+            "strut_id": 12080,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8871592039242387,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12080_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12080_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 15942,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15942_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15942_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15942_missing_profile.svg"
+            "strut_id": 11853,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8869494989514352,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11853_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11853_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 15943,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15943_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15943_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15943_missing_profile.svg"
-          },
-          {
-            "strut_id": 15970,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15970_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15970_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15970_missing_profile.svg"
-          },
-          {
-            "strut_id": 15971,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15971_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15971_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15971_missing_profile.svg"
-          },
-          {
-            "strut_id": 15996,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15996_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_15996_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15996_missing_profile.svg"
-          },
-          {
-            "strut_id": 16024,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_16024_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_16024_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_16024_missing_profile.svg"
-          },
-          {
-            "strut_id": 18193,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18193_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18193_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18193_missing_profile.svg"
-          },
-          {
-            "strut_id": 18194,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18194_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18194_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18194_missing_profile.svg"
-          },
-          {
-            "strut_id": 18195,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18195_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18195_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18195_missing_profile.svg"
-          },
-          {
-            "strut_id": 18226,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18226_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18226_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18226_missing_profile.svg"
-          },
-          {
-            "strut_id": 18227,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18227_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18227_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18227_missing_profile.svg"
-          },
-          {
-            "strut_id": 18257,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18257_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18257_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18257_missing_profile.svg"
-          },
-          {
-            "strut_id": 18289,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18289_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18289_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18289_missing_profile.svg"
-          },
-          {
-            "strut_id": 18290,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18290_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18290_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18290_missing_profile.svg"
-          },
-          {
-            "strut_id": 18322,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18322_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18322_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18322_missing_profile.svg"
-          },
-          {
-            "strut_id": 18323,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.95,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18323_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_18323_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18323_missing_profile.svg"
-          },
-          {
-            "strut_id": 1800,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01800_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01800_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01800_missing_profile.svg"
-          },
-          {
-            "strut_id": 1940,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01940_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01940_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01940_missing_profile.svg"
-          },
-          {
-            "strut_id": 1969,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_01969_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_01969_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_01969_missing_profile.svg"
-          },
-          {
-            "strut_id": 2001,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_02001_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_02001_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_02001_missing_profile.svg"
-          },
-          {
-            "strut_id": 2002,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_02002_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_02002_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_02002_missing_profile.svg"
-          },
-          {
-            "strut_id": 3818,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03818_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03818_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03818_missing_profile.svg"
-          },
-          {
-            "strut_id": 3847,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03847_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03847_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03847_missing_profile.svg"
-          },
-          {
-            "strut_id": 3958,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03958_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03958_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03958_missing_profile.svg"
-          },
-          {
-            "strut_id": 3984,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_03984_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_03984_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_03984_missing_profile.svg"
-          },
-          {
-            "strut_id": 4016,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_04016_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_04016_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_04016_missing_profile.svg"
-          },
-          {
-            "strut_id": 4018,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_04018_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_04018_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_04018_missing_profile.svg"
-          },
-          {
-            "strut_id": 5807,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05807_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05807_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05807_missing_profile.svg"
-          },
-          {
-            "strut_id": 5832,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05832_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05832_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05832_missing_profile.svg"
-          },
-          {
-            "strut_id": 5834,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05834_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05834_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05834_missing_profile.svg"
-          },
-          {
-            "strut_id": 5918,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05918_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05918_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05918_missing_profile.svg"
-          },
-          {
-            "strut_id": 5944,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05944_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_05944_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05944_missing_profile.svg"
-          },
-          {
-            "strut_id": 6000,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_06000_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_06000_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_06000_missing_profile.svg"
-          },
-          {
-            "strut_id": 7820,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07820_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07820_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07820_missing_profile.svg"
-          },
-          {
-            "strut_id": 7821,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07821_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07821_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07821_missing_profile.svg"
-          },
-          {
-            "strut_id": 7848,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07848_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07848_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07848_missing_profile.svg"
-          },
-          {
-            "strut_id": 7876,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07876_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07876_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07876_missing_profile.svg"
-          },
-          {
-            "strut_id": 7934,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07934_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07934_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07934_missing_profile.svg"
-          },
-          {
-            "strut_id": 7962,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07962_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_07962_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07962_missing_profile.svg"
-          },
-          {
-            "strut_id": 8018,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08018_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_08018_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08018_missing_profile.svg"
-          },
-          {
-            "strut_id": 9867,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09867_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09867_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09867_missing_profile.svg"
-          },
-          {
-            "strut_id": 9921,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09921_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09921_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09921_missing_profile.svg"
-          },
-          {
-            "strut_id": 9923,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09923_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_09923_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09923_missing_profile.svg"
-          },
-          {
-            "strut_id": 10006,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10006_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10006_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10006_missing_profile.svg"
-          },
-          {
-            "strut_id": 10032,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10032_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10032_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10032_missing_profile.svg"
+            "strut_id": 12082,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8867978440597654,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12082_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12082_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
             "strut_id": 10064,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10064_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_10064_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10064_missing_profile.svg"
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8867608441971243,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10064_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10064_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
             "strut_id": 11855,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11855_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11855_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11855_missing_profile.svg"
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8865815794095396,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11855_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11855_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
-            "strut_id": 11936,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11936_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11936_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11936_missing_profile.svg"
+            "strut_id": 13897,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8865569587796925,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13897_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13897_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13899,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8863253608345986,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13899_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13899_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13926,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8863180097192526,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13926_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13926_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11966,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8862778028473258,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11966_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11966_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 18452,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8862575335428119,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18452_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18452_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14098,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8861972730606794,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14098_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14098_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 12022,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8861877614632249,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12022_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12022_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
             "strut_id": 11938,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11938_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11938_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11938_missing_profile.svg"
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.886146206408739,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11938_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11938_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11911,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.886127202771604,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11911_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11911_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13868,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8861207552254199,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13868_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13868_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9920,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8861132320016621,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09920_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09920_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13869,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8861001504585148,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13869_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13869_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 12020,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8860869841650129,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12020_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12020_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9922,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8860708085820078,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09922_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09922_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14066,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.886055041104555,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14066_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14066_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14038,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8860440013930201,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14038_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14038_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9867,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8860383335500955,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09867_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09867_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13982,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8860292300581932,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13982_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13982_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 12050,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8860083384439349,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12050_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12050_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11908,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.885991450957954,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11908_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11908_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11994,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8859870556741952,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11994_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11994_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9978,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8859859786927701,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09978_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09978_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13954,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8859719075262545,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13954_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13954_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13871,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8859582901000976,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13871_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13871_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13927,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8859491292387246,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13927_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13927_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 16112,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8859123645350336,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_16112_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_16112_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9894,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8858940036967397,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09894_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09894_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14010,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8858816796913743,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14010_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14010_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9950,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8858671704307198,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09950_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09950_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13898,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.885835175216198,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13898_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13898_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13924,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8858232906088234,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13924_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13924_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7851,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8857996817678212,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07851_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07851_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14064,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8857985474169253,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14064_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14064_weak_missing_profile.svg",
+            "visual_evidence_png": null
           },
           {
             "strut_id": 11964,
-            "classification": "missing",
-            "visual_classification": "missing",
-            "visual_confidence": 0.85,
-            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11964_missing.svg",
-            "visual_evidence_png": "data/missing_struts/analysis/defect_visual_review/strut_11964_missing.png",
-            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11964_missing_profile.svg"
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8857393942773343,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11964_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11964_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11936,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8857365231961011,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11936_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11936_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9837,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8857219302444718,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09837_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09837_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14008,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8856946643441915,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14008_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14008_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 15913,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8856827719137071,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15913_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15913_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 15941,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8856752838939429,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15941_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15941_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11880,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8856340704485773,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11880_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11880_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9864,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8856230881065129,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09864_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09864_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9892,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8856178674846887,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09892_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09892_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9839,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8855874629691244,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09839_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09839_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9893,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8855728246271609,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09893_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09893_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11881,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8855533268302679,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11881_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11881_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13980,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8855500632897019,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13980_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13980_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14036,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8855224072933198,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14036_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14036_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11882,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8854867130517959,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11882_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11882_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 15887,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8854647357249633,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15887_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15887_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7906,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8854638252407313,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07906_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07906_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11852,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8854608511552214,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11852_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11852_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7934,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.885460433922708,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07934_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07934_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 8048,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8854510552482681,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_08048_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_08048_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11883,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8854219768196344,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11883_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11883_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13870,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8853808142244816,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13870_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13870_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9976,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8853685423731804,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09976_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09976_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9948,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8853605458512902,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09948_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09948_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 10004,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8853555807843804,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10004_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10004_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13952,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8853236872702838,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13952_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13952_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9866,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8853035870939493,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09866_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09866_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11910,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852948512881994,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11910_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11910_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9865,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852929880842567,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09865_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09865_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 12075,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852917850017549,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_12075_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_12075_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 5918,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852671965956688,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05918_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05918_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 5807,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.88525169249624,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05807_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05807_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13896,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852439749985933,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13896_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13896_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13953,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852366369217634,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13953_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13953_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 14091,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852361558005214,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_14091_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_14091_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 10034,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852186020463705,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10034_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10034_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11909,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852058934047818,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11909_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11909_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7878,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8852000521495939,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07878_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07878_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13955,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851855754852295,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13955_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13955_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7960,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851833237335086,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07960_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07960_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 9895,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.885181918181479,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_09895_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_09895_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 18445,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851696588099002,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_18445_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_18445_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13983,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851593980565667,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13983_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13983_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 11939,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851578569039703,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_11939_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_11939_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 5835,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.88514947835356,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05835_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05835_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7848,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851311031728982,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07848_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07848_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7932,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851233556866646,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07932_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07932_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7904,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8851118935272096,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07904_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07904_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 5805,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8850950712338089,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_05805_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_05805_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 15884,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.885089035704732,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_15884_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_15884_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 13925,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8850301433354616,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_13925_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_13925_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 10032,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8849855735898019,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_10032_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_10032_weak_missing_profile.svg",
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7990,
+            "cluster_id": 1,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "defect_score": 0.8849774503847584,
+            "profile_plot": "data/missing_struts/analysis/defect_visual_review/strut_07990_weak_missing_profile.svg",
+            "visual_evidence": "data/missing_struts/analysis/defect_visual_review/strut_07990_weak_missing_profile.svg",
+            "visual_evidence_png": null
           }
         ]
       }
     },
     {
-      "title": "Hugging Face model review results",
+      "title": "External model review compatibility record",
       "source": "data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json",
       "content": {
         "status": "skipped",
-        "reason": "DEFECT_HF_REVIEW_LIMIT is 0",
-        "model": "zai-org/GLM-4.5V",
-        "requested_limit": 0,
+        "reason": "No external LLM/API review was used; cluster labels came from the local defect_labeler subagent.",
         "reviews": []
       }
     },
@@ -2592,19 +3528,84 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
         "total_records": 18468,
         "first_10_anomalies": [
           {
-            "strut_id": 0,
-            "classification": "missing",
-            "reason": "material profile is low across the expected strut",
-            "coverage_ratio": 0.18181818181818182,
-            "profile_classification": "missing",
-            "profile_mean": 0.09,
+            "strut_id": 4,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.22134053707122803,
+            "profile_mean": 0.22134053707122803,
             "profile_min": 0.0,
             "low_profile_segments": [
               0,
               1,
               2,
+              3
+            ],
+            "longest_low_profile_gap": 4,
+            "profile_plot": null,
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 5,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.2445039004087448,
+            "profile_mean": 0.2445039004087448,
+            "profile_min": 0.07156158238649368,
+            "low_profile_segments": [
+              2,
               3,
-              4,
+              4
+            ],
+            "longest_low_profile_gap": 3,
+            "profile_plot": null,
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 7,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.2969948947429657,
+            "profile_mean": 0.2969948947429657,
+            "profile_min": 0.19451622664928436,
+            "low_profile_segments": [],
+            "longest_low_profile_gap": 0,
+            "profile_plot": null,
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 8,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.3425348401069641,
+            "profile_mean": 0.3425348401069641,
+            "profile_min": 0.0,
+            "low_profile_segments": [
+              0,
+              1,
+              2
+            ],
+            "longest_low_profile_gap": 3,
+            "profile_plot": null,
+            "visual_evidence_png": null
+          },
+          {
+            "strut_id": 10,
+            "classification": "weak",
+            "weak_subtype": "missing",
+            "weak_subtype_reason": "very low mean support with a long contiguous low-support gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.15391932427883148,
+            "profile_mean": 0.15391932427883148,
+            "profile_min": 0.09002082794904709,
+            "low_profile_segments": [
               5,
               6,
               7,
@@ -2618,191 +3619,77 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
               15,
               16
             ],
-            "longest_low_profile_gap": 17,
-            "profile_plot": null,
-            "visual_evidence_png": null
-          },
-          {
-            "strut_id": 1,
-            "classification": "disconnected",
-            "reason": "endpoints have support but one or more middle segments drop below threshold",
-            "coverage_ratio": 0.5454545454545454,
-            "profile_classification": "broken",
-            "profile_mean": 0.24,
-            "profile_min": 0.0,
-            "low_profile_segments": [
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11,
-              12,
-              13,
-              14,
-              15
-            ],
             "longest_low_profile_gap": 12,
             "profile_plot": null,
             "visual_evidence_png": null
           },
           {
-            "strut_id": 2,
-            "classification": "disconnected",
-            "reason": "endpoints have support but one or more middle segments drop below threshold",
-            "coverage_ratio": 0.45454545454545453,
-            "profile_classification": "broken",
-            "profile_mean": 0.33562870818962093,
-            "profile_min": 0.0,
-            "low_profile_segments": [
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11,
-              12,
-              13,
-              14
-            ],
-            "longest_low_profile_gap": 11,
-            "profile_plot": null,
-            "visual_evidence_png": null
-          },
-          {
-            "strut_id": 3,
-            "classification": "disconnected",
-            "reason": "endpoints have support but one or more middle segments drop below threshold",
-            "coverage_ratio": 0.45454545454545453,
-            "profile_classification": "broken",
-            "profile_mean": 0.26999999999999996,
-            "profile_min": 0.0,
-            "low_profile_segments": [
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11,
-              12,
-              13,
-              14
-            ],
-            "longest_low_profile_gap": 11,
-            "profile_plot": null,
-            "visual_evidence_png": null
-          },
-          {
-            "strut_id": 4,
-            "classification": "disconnected",
-            "reason": "endpoints have support but one or more middle segments drop below threshold",
-            "coverage_ratio": 0.5454545454545454,
-            "profile_classification": "broken",
-            "profile_mean": 0.4016513716513142,
-            "profile_min": 0.0,
-            "low_profile_segments": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8,
-              9
-            ],
-            "longest_low_profile_gap": 10,
-            "profile_plot": null,
-            "visual_evidence_png": null
-          },
-          {
-            "strut_id": 5,
-            "classification": "disconnected",
-            "reason": "skeleton material is nearby, but no observed path connects both expected endpoints",
-            "coverage_ratio": 1.0,
-            "profile_classification": "continuous",
-            "profile_mean": 0.7193620069153536,
-            "profile_min": 0.6,
+            "strut_id": 107,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.3330414295196533,
+            "profile_mean": 0.3330414295196533,
+            "profile_min": 0.24089112877845764,
             "low_profile_segments": [],
             "longest_low_profile_gap": 0,
             "profile_plot": null,
             "visual_evidence_png": null
           },
           {
-            "strut_id": 7,
-            "classification": "disconnected",
-            "reason": "skeleton material is nearby, but no observed path connects both expected endpoints",
-            "coverage_ratio": 1.0,
-            "profile_classification": "continuous",
-            "profile_mean": 0.8609133599314905,
-            "profile_min": 0.7,
+            "strut_id": 131,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.2953636646270752,
+            "profile_mean": 0.2953636646270752,
+            "profile_min": 0.19817933440208435,
             "low_profile_segments": [],
             "longest_low_profile_gap": 0,
             "profile_plot": null,
             "visual_evidence_png": null
           },
           {
-            "strut_id": 8,
-            "classification": "disconnected",
-            "reason": "endpoints have support but one or more middle segments drop below threshold",
-            "coverage_ratio": 0.7272727272727273,
-            "profile_classification": "broken",
-            "profile_mean": 0.6267982511152294,
-            "profile_min": 0.0,
-            "low_profile_segments": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ],
-            "longest_low_profile_gap": 5,
+            "strut_id": 155,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.24471455812454224,
+            "profile_mean": 0.24471455812454224,
+            "profile_min": 0.1384022831916809,
+            "low_profile_segments": [],
+            "longest_low_profile_gap": 0,
             "profile_plot": null,
             "visual_evidence_png": null
           },
           {
-            "strut_id": 9,
-            "classification": "disconnected",
-            "reason": "skeleton material is nearby, but no observed path connects both expected endpoints",
-            "coverage_ratio": 0.9090909090909091,
-            "profile_classification": "weak",
-            "profile_mean": 0.6932441050820582,
-            "profile_min": 0.0,
-            "low_profile_segments": [
-              12
-            ],
-            "longest_low_profile_gap": 1,
+            "strut_id": 156,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.3416946828365326,
+            "profile_mean": 0.3416946828365326,
+            "profile_min": 0.18491539359092712,
+            "low_profile_segments": [],
+            "longest_low_profile_gap": 0,
             "profile_plot": null,
             "visual_evidence_png": null
           },
           {
-            "strut_id": 10,
-            "classification": "disconnected",
-            "reason": "endpoints have support but one or more middle segments drop below threshold",
-            "coverage_ratio": 0.5454545454545454,
-            "profile_classification": "broken",
-            "profile_mean": 0.43499999999999994,
-            "profile_min": 0.0,
-            "low_profile_segments": [
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11,
-              12,
-              13,
-              14
-            ],
-            "longest_low_profile_gap": 10,
+            "strut_id": 161,
+            "classification": "weak",
+            "weak_subtype": "thin",
+            "weak_subtype_reason": "weak strut has reduced average or middle support but no decisive full gap",
+            "reason": "cluster has materially reduced raw CT support relative to the present baseline",
+            "coverage_ratio": 0.35376086831092834,
+            "profile_mean": 0.35376086831092834,
+            "profile_min": 0.16599097847938538,
+            "low_profile_segments": [],
+            "longest_low_profile_gap": 0,
             "profile_plot": null,
             "visual_evidence_png": null
           }
@@ -2812,7 +3699,7 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
     {
       "title": "Anomaly Markdown summary",
       "source": "data/missing_struts/analysis/anomaly_summary.md",
-      "content": "# Defect Detection Summary\n\n- Expected struts: **18468**\n- Observed skeleton struts: **19824**\n- Present struts: **16258**\n- Weak struts: **0**\n- Missing struts: **314**\n- Disconnected struts: **1896**\n- Confirmed anomalies: **2210**\n- Confirmed anomaly percentage: **11.97%**\n- Profile segments per strut: **20**\n- Profile classification counts: `{'broken': 658, 'continuous': 17193, 'missing': 314, 'weak': 303}`\n- Visual review panels generated: **100**\n- Visual review index: `/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/visual_review_index.json`\n- Hugging Face model reviews: **0**\n- Hugging Face model review results: `/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json`\n\n## Decision Rules\n\n- Each expected strut is sampled at 11 evenly spaced points.\n- A sample is covered when an observed skeleton point is within 12 voxels.\n- `present`: coverage is at least 65% and the same observed skeleton path reaches both endpoints.\n- `missing`: coverage is 10% or less.\n- `disconnected`: coverage is at least 25%, but no observed path connects both endpoints.\n- `weak`: partial coverage remains below the present threshold.\n\n## Node-to-Node Material Profile\n\n- Each expected JSON edge is divided into 20 equal segments from node x to node y.\n- Each segment receives a support value from nearby observed skeleton evidence within 12 voxels.\n- Segment values below 0.20 are low-support regions.\n- `missing`: the profile is low across the expected strut.\n- `disconnected`: endpoints have support, but a middle low-support gap appears.\n- `weak`: the profile has partial support or isolated low-support segments.\n- `continuous`: the profile is supported along the expected edge.\n\n## Visual Review Layer\n\n- Candidate anomalies are rendered as SVG panels with two projections: XY and XZ.\n- Red/orange/purple lines show the expected strut; blue points show nearby observed skeleton evidence.\n- The visual label is derived from the same panel evidence and stored per strut.\n- When `HUGGINGFACE_API_KEY` is set and `DEFECT_HF_REVIEW_LIMIT` is greater than 0, candidate panels are sent to the configured Hugging Face vision-language model."
+      "content": "# Defect Detection Summary\n\n- Method: **unsupervised raw-CT strut embedding clustering with local labeller subagent**\n- Expected struts: **18468**\n- Selected clusters: **2**\n- Silhouette score: **0.39542695353317475**\n- Present struts: **12619**\n- Weak struts: **5849**\n- Weak/missing subtype: **640**\n- Weak/broken subtype: **328**\n- Weak/thin subtype: **4770**\n- Weak/uncertain subtype: **111**\n- Confirmed defects: **5849**\n- Confirmed defect percentage: **31.67%**\n- Nominal defect-rate comparison: **detected 31.67% vs nominal 0.5-1.0%**\n\n## Defective Strut Definition\n\nA defective strut is an expected registered-JSON strut assigned to a cluster that the local labeller subagent labels as weak. Weak struts are then subtyped as missing, broken, thin, or uncertain_weak from raw CT support-profile evidence.\n\n## Performance Metric\n\n- Primary metric: unsupervised cluster validity from silhouette score and seed-stability statistics.\n- Nominal 0.5-1% defect rate is included only as contextual comparison, not as the performance metric.\n\n## Labeller Subagent\n\n- Cluster labels: `/home/mtrev008/Desktop/LLNL_DSC/llnl_data_science_challenge_2026/data/missing_struts/analysis/cluster_labels.json`\n- Labels were assigned after clustering by the local labeller subagent from saved cluster summaries.\n- Weak struts were further subtyped from per-strut raw CT support profiles.\n- No external LLM/API review was used."
     }
   ],
   "metrics": {
@@ -2826,7 +3713,7 @@ Source: `data/missing_struts/analysis/anomaly_summary.md`
 
 - Subagent: `.codex/agents/visualization`
 - Status: `passed`
-- Command: `/home/mtrev008/miniconda3/bin/python -B .codex/agents/visualization/run.py`
+- Command: `/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/visualization/run.py`
 - Return code: `0`
 
 ### Result Artifacts
@@ -2884,7 +3771,7 @@ Source: `data/missing_struts/analysis/segmentation_view_b.png`
   "step": "Visualization",
   "subagent": ".codex/agents/visualization",
   "status": "passed",
-  "command": "/home/mtrev008/miniconda3/bin/python -B .codex/agents/visualization/run.py",
+  "command": "/home/mtrev008/miniconda3/envs/dssi_env/bin/python -B .codex/agents/visualization/run.py",
   "stdout": "Visualization pipeline step",
   "stderr": "",
   "outputs": [
