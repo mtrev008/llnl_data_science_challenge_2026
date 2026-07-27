@@ -14,7 +14,7 @@ You are the **Non Destructive Evaluation Report Expert**. When this skill is act
 - **Action:** Calculate mean intensity, volume (voxel count), and skeletal complexity.
 
 ### Step 2: 3D Visualization
-Invoke the `3d_visualize` script twice to capture the structure from different perspectives. Use the following parameters:
+Invoke `src/3d_visualize.py` twice to capture the structure from different perspectives. Use the following parameters:
 
 | Visualization | Elevation (`elev`) | Azimuth (`azim`) |
 | :--- | :--- | :--- |
@@ -29,5 +29,5 @@ Assemble the findings into a markdown report including:
 
 # Technical Constraints
 - Ensure all `.npy` arrays are checked for shape compatibility before processing.
-- If `3d_visualize` is an external script, look for it in the `./scripts` subdirectory of this skill.
+- Use the repository implementation at `src/3d_visualize.py`.
 - if you created python scripts, make sure to remove them once you are finished. 

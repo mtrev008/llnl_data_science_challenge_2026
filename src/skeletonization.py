@@ -1,6 +1,7 @@
-import numpy as np
+import argparse
 from pathlib import Path
 
+import numpy as np
 import tifffile
 from skimage.morphology import skeletonize
 
@@ -48,13 +49,20 @@ def skeletonize_mask(input_filepath: str, output_filepath: str) -> np.ndarray:
     return result
 
 
-if __name__ == "__main__":
-    # Hardcoded parameters for testing
-    project_root = Path(__file__).resolve().parent.parent
-    file_path = project_root / "data" / "unitcell" / "unitcell.npy"
-    output_path = project_root / "data" / "octet_truss_unit_cell_skeleton.npy"
-
-    skeletonize_mask(
-        input_filepath=str(file_path),
-        output_filepath=str(output_path),
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Create a 3D skeleton from a binary NPY or TIFF mask."
     )
+    parser.add_argument("input", type=Path, help="Input 3D segmentation mask")
+    parser.add_argument("output", type=Path, help="Output 3D skeleton")
+    args = parser.parse_args()
+
+    result = skeletonize_mask(str(args.input), str(args.output))
+    print(
+        f"Skeletonized {args.input.resolve()}; saved {args.output.resolve()} "
+        f"with shape {result.shape} and {np.count_nonzero(result)} skeleton voxels."
+    )
+
+
+if __name__ == "__main__":
+    main()

@@ -9,7 +9,7 @@ Given an original TIFF, create all outputs in a `segmentation` folder beside it.
 
 ## Files and tools
 
-- `threshold_optimizer.py` is the threshold-selection code. It examines the CT
+- `src/threshold_optimizer.py` is the threshold-selection code. It examines the CT
   volume’s intensity and brightness behavior to determine the threshold used
   for separating lattice material from background.
 - `segment_ct_dataset` in `src/mcp_server.py` is the segmentation tool. It reads
@@ -21,11 +21,11 @@ Given an original TIFF, create all outputs in a `segmentation` folder beside it.
 
 ## Workflow
 
-1. Run `threshold_optimizer.py` first to obtain the optimized threshold.
-2. Call `segment_ct_dataset` from `src/mcp_server.py` on the original TIFF with
-   that threshold. Create a new `uint8` `0/255` segmentation TIFF; do not reuse
-   or copy an existing segmentation.
-3. Call `skeletonize` from `src/mcp_server.py` on the new segmentation and save
+1. Run `src/threshold_optimizer.py` first. It applies its optimized per-slice
+   threshold profile and writes a new `uint8` `0/255` segmentation TIFF; do not
+   reuse or copy an existing segmentation.
+2. Call `skeletonize` from `src/mcp_server.py` on the new segmentation and save
    the resulting skeleton.
 
-Report the threshold, segmentation path, and skeleton path.
+Report the reference threshold, optimized threshold range, segmentation path,
+and skeleton path.
