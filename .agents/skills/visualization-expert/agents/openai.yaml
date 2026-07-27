@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visualization Expert"
+  short_description: "Create reproducible CT and lattice visualizations"
+  default_prompt: "Use $visualization-expert to create scientifically appropriate visualizations for these pipeline outputs."

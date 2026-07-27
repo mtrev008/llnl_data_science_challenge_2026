@@ -124,6 +124,28 @@ if __name__ == "__main__":
 
 The server script in this repository, `src/mcp_server.py`, should follow this pattern as you add each tool.
 
+#### Visualization tools
+
+The same `src/mcp_server.py` server also exposes reusable visualization tools
+for any pipeline agent:
+
+- `inspect_visualization_input`
+- `create_histogram`
+- `create_bar_chart`
+- `visualize_slice`
+- `create_orthogonal_views`
+- `plot_slice_trend`
+- `overlay_segmentation`
+- `compare_masks`
+- `render_graph`
+
+These tools accept direct file paths and do not require a validation report.
+Callers may optionally provide `validation_report_filepath` to preserve a
+recognized validation decision and warnings in the visualization provenance.
+The visualization tools use the deterministic renderer in
+`.agents/skills/visualization-expert/scripts/generate_visualization.py`,
+including streaming TIFF operations and memory safeguards.
+
 #### Basic Image Processing Terms
 Before starting Tasks 1-3, here are a few image-processing terms you will use with respect to a volume/image:
 
