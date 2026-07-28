@@ -1,0 +1,569 @@
+{
+  "schema_version": "1.0",
+  "artifacts": [
+    {
+      "status": "success",
+      "visualization_type": "histogram",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\9x9x9_octet_lattice.tif",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\histograms\\tiff_intensity_distribution.png",
+      "parameters": {
+        "command": "histogram",
+        "column": null,
+        "bins": "auto",
+        "title": "CT Intensity Distribution",
+        "x_label": "CT Intensity",
+        "threshold": null,
+        "show_mean": true,
+        "show_median": true,
+        "log_count": false
+      },
+      "statistics": {
+        "count": 519119955,
+        "minimum": 0.0,
+        "maximum": 65535.0,
+        "mean": 34296.14655017452,
+        "median": 32409.0,
+        "standard_deviation": 5220.137286345647,
+        "q1": 31765.0,
+        "q3": 33686.0,
+        "occupied_bin_count": 54550,
+        "shape": [
+          761,
+          815,
+          837
+        ],
+        "dtype": "uint16",
+        "discarded_value_count": 0
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": false,
+        "sampling_method": null,
+        "created_utc": "2026-07-27T21:12:01.932707+00:00",
+        "statistics_source": "streamed_tiff_pages",
+        "pages_processed": 761,
+        "histogram_count_coverage": 1.0,
+        "tiff_metadata": {
+          "shape": [
+            761,
+            815,
+            837
+          ],
+          "dtype": "uint16",
+          "page_count": 761,
+          "page_shape": [
+            815,
+            837
+          ],
+          "compression": "NONE",
+          "memory_mappable": true,
+          "estimated_uncompressed_bytes": 1038239910
+        }
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    },
+    {
+      "status": "success",
+      "visualization_type": "slice-trend",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\9x9x9_octet_lattice.tif",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\statistical_plots\\tiff_slice_mean.png",
+      "parameters": {
+        "command": "slice-trend",
+        "metric": "mean",
+        "axis": 0,
+        "column": null,
+        "title": "Mean CT Intensity by Z Slice"
+      },
+      "statistics": {
+        "count": 761,
+        "minimum": 32761.569184422897,
+        "maximum": 49093.40880005278,
+        "mean": 34296.14655017451,
+        "median": 33058.97240803043,
+        "standard_deviation": 3300.860609585776,
+        "q1": 32942.50090375355,
+        "q3": 33503.1101172021
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": false,
+        "sampling_method": null,
+        "created_utc": "2026-07-27T21:12:03.610383+00:00",
+        "statistics_source": "streamed_tiff_pages",
+        "pages_processed": 761,
+        "tiff_metadata": {
+          "shape": [
+            761,
+            815,
+            837
+          ],
+          "dtype": "uint16",
+          "page_count": 761,
+          "page_shape": [
+            815,
+            837
+          ],
+          "compression": "NONE",
+          "memory_mappable": true,
+          "estimated_uncompressed_bytes": 1038239910
+        }
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    },
+    {
+      "status": "success",
+      "visualization_type": "slice-trend",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\9x9x9_octet_lattice.tif",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\statistical_plots\\tiff_slice_standard_deviation.png",
+      "parameters": {
+        "command": "slice-trend",
+        "metric": "std",
+        "axis": 0,
+        "column": null,
+        "title": "CT Intensity Standard Deviation by Z Slice"
+      },
+      "statistics": {
+        "count": 761,
+        "minimum": 2574.088191454141,
+        "maximum": 10063.883148344372,
+        "mean": 3720.6622882393694,
+        "median": 3000.2078238475888,
+        "standard_deviation": 1590.114696306652,
+        "q1": 2841.404101835858,
+        "q3": 3862.7420420780863
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": false,
+        "sampling_method": null,
+        "created_utc": "2026-07-27T21:12:07.753902+00:00",
+        "statistics_source": "streamed_tiff_pages",
+        "pages_processed": 761,
+        "tiff_metadata": {
+          "shape": [
+            761,
+            815,
+            837
+          ],
+          "dtype": "uint16",
+          "page_count": 761,
+          "page_shape": [
+            815,
+            837
+          ],
+          "compression": "NONE",
+          "memory_mappable": true,
+          "estimated_uncompressed_bytes": 1038239910
+        }
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    },
+    {
+      "status": "success",
+      "visualization_type": "slice",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\9x9x9_octet_lattice.tif",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\ct_slices\\tiff_z_slice_000.png",
+      "parameters": {
+        "command": "slice",
+        "axis": 0,
+        "index": 0,
+        "low_percentile": 1.0,
+        "high_percentile": 99.0,
+        "title": "CT Z Slice 0"
+      },
+      "statistics": {
+        "source_shape": [
+          761,
+          815,
+          837
+        ],
+        "selected_index": 0,
+        "display_min": 24235.54,
+        "display_max": 59375.0,
+        "sampled": false,
+        "sampling_method": null,
+        "sampled_component": null,
+        "source_value_count": 682155,
+        "sample_value_count": 682155,
+        "stride": 1,
+        "render_downsampled": false,
+        "original_dimensions": [
+          815,
+          837
+        ],
+        "rendered_dimensions": [
+          815,
+          837
+        ],
+        "render_sampling_method": null,
+        "render_row_stride": 1,
+        "render_column_stride": 1
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": false,
+        "sampling_method": null,
+        "created_utc": "2026-07-27T21:12:09.602457+00:00",
+        "sampled_component": null,
+        "source_value_count": 682155,
+        "sample_value_count": 682155,
+        "stride": 1,
+        "render_downsampled": false,
+        "original_dimensions": [
+          815,
+          837
+        ],
+        "rendered_dimensions": [
+          815,
+          837
+        ],
+        "render_sampling_method": null,
+        "render_row_stride": 1,
+        "render_column_stride": 1
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    },
+    {
+      "status": "success",
+      "visualization_type": "slice",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\9x9x9_octet_lattice.tif",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\ct_slices\\tiff_z_slice_380.png",
+      "parameters": {
+        "command": "slice",
+        "axis": 0,
+        "index": 380,
+        "low_percentile": 1.0,
+        "high_percentile": 99.0,
+        "title": "CT Z Slice 380"
+      },
+      "statistics": {
+        "source_shape": [
+          761,
+          815,
+          837
+        ],
+        "selected_index": 380,
+        "display_min": 30474.0,
+        "display_max": 54449.45999999996,
+        "sampled": false,
+        "sampling_method": null,
+        "sampled_component": null,
+        "source_value_count": 682155,
+        "sample_value_count": 682155,
+        "stride": 1,
+        "render_downsampled": false,
+        "original_dimensions": [
+          815,
+          837
+        ],
+        "rendered_dimensions": [
+          815,
+          837
+        ],
+        "render_sampling_method": null,
+        "render_row_stride": 1,
+        "render_column_stride": 1
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": false,
+        "sampling_method": null,
+        "created_utc": "2026-07-27T21:12:11.513927+00:00",
+        "sampled_component": null,
+        "source_value_count": 682155,
+        "sample_value_count": 682155,
+        "stride": 1,
+        "render_downsampled": false,
+        "original_dimensions": [
+          815,
+          837
+        ],
+        "rendered_dimensions": [
+          815,
+          837
+        ],
+        "render_sampling_method": null,
+        "render_row_stride": 1,
+        "render_column_stride": 1
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    },
+    {
+      "status": "success",
+      "visualization_type": "slice",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\9x9x9_octet_lattice.tif",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\ct_slices\\tiff_z_slice_760.png",
+      "parameters": {
+        "command": "slice",
+        "axis": 0,
+        "index": 760,
+        "low_percentile": 1.0,
+        "high_percentile": 99.0,
+        "title": "CT Z Slice 760"
+      },
+      "statistics": {
+        "source_shape": [
+          761,
+          815,
+          837
+        ],
+        "selected_index": 760,
+        "display_min": 24814.0,
+        "display_max": 52935.0,
+        "sampled": false,
+        "sampling_method": null,
+        "sampled_component": null,
+        "source_value_count": 682155,
+        "sample_value_count": 682155,
+        "stride": 1,
+        "render_downsampled": false,
+        "original_dimensions": [
+          815,
+          837
+        ],
+        "rendered_dimensions": [
+          815,
+          837
+        ],
+        "render_sampling_method": null,
+        "render_row_stride": 1,
+        "render_column_stride": 1
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": false,
+        "sampling_method": null,
+        "created_utc": "2026-07-27T21:12:13.165252+00:00",
+        "sampled_component": null,
+        "source_value_count": 682155,
+        "sample_value_count": 682155,
+        "stride": 1,
+        "render_downsampled": false,
+        "original_dimensions": [
+          815,
+          837
+        ],
+        "rendered_dimensions": [
+          815,
+          837
+        ],
+        "render_sampling_method": null,
+        "render_row_stride": 1,
+        "render_column_stride": 1
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    },
+    {
+      "status": "success",
+      "visualization_type": "orthogonal",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\9x9x9_octet_lattice.tif",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\ct_slices\\tiff_orthogonal_center_views.png",
+      "parameters": {
+        "command": "orthogonal",
+        "low_percentile": 1.0,
+        "high_percentile": 99.0,
+        "title": "CT Orthogonal Center Views"
+      },
+      "statistics": {
+        "source_shape": [
+          761,
+          815,
+          837
+        ],
+        "indices": [
+          380,
+          407,
+          418
+        ],
+        "display_min": 29788.0,
+        "display_max": 54367.0,
+        "sampled": true,
+        "sampling_method": "regular_stride",
+        "sampled_component": "display_window",
+        "source_value_count": 519119955,
+        "sample_value_count": 1996616,
+        "stride": 260,
+        "render_views": [
+          {
+            "render_downsampled": false,
+            "original_dimensions": [
+              815,
+              837
+            ],
+            "rendered_dimensions": [
+              815,
+              837
+            ],
+            "render_sampling_method": null,
+            "render_row_stride": 1,
+            "render_column_stride": 1
+          },
+          {
+            "render_downsampled": false,
+            "original_dimensions": [
+              761,
+              837
+            ],
+            "rendered_dimensions": [
+              761,
+              837
+            ],
+            "render_sampling_method": null,
+            "render_row_stride": 1,
+            "render_column_stride": 1
+          },
+          {
+            "render_downsampled": false,
+            "original_dimensions": [
+              761,
+              815
+            ],
+            "rendered_dimensions": [
+              761,
+              815
+            ],
+            "render_sampling_method": null,
+            "render_row_stride": 1,
+            "render_column_stride": 1
+          }
+        ]
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": true,
+        "sampling_method": "regular_stride",
+        "created_utc": "2026-07-27T21:12:15.508909+00:00",
+        "sampled_component": "display_window",
+        "source_value_count": 519119955,
+        "sample_value_count": 1996616,
+        "stride": 260,
+        "render_views": [
+          {
+            "render_downsampled": false,
+            "original_dimensions": [
+              815,
+              837
+            ],
+            "rendered_dimensions": [
+              815,
+              837
+            ],
+            "render_sampling_method": null,
+            "render_row_stride": 1,
+            "render_column_stride": 1
+          },
+          {
+            "render_downsampled": false,
+            "original_dimensions": [
+              761,
+              837
+            ],
+            "rendered_dimensions": [
+              761,
+              837
+            ],
+            "render_sampling_method": null,
+            "render_row_stride": 1,
+            "render_column_stride": 1
+          },
+          {
+            "render_downsampled": false,
+            "original_dimensions": [
+              761,
+              815
+            ],
+            "rendered_dimensions": [
+              761,
+              815
+            ],
+            "render_sampling_method": null,
+            "render_row_stride": 1,
+            "render_column_stride": 1
+          }
+        ]
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    },
+    {
+      "status": "success",
+      "visualization_type": "graph",
+      "input_paths": [
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\missing_struts\\registered_jsons\\210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json",
+        "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      ],
+      "output_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\visualizations\\graph_views\\registered_graph_xy_projection.png",
+      "parameters": {
+        "command": "graph",
+        "x_dimension": 0,
+        "y_dimension": 1,
+        "title": "Registered Lattice Graph: XY Projection"
+      },
+      "statistics": {
+        "junction_count": 10206,
+        "plotted_junction_count": 10206,
+        "strut_count": 18468,
+        "invalid_edge_count": 0
+      },
+      "warnings": [],
+      "provenance": {
+        "script": "generate_visualization.py",
+        "sampled": false,
+        "sampling_method": null,
+        "created_utc": "2026-07-27T21:12:24.140828+00:00"
+      },
+      "upstream_validation": {
+        "decision": "PASS",
+        "report_path": "C:\\Users\\andre\\llnl_data_science_challenge_2026\\data\\9x9x9_octet_lattice\\validation\\validation_report.json"
+      }
+    }
+  ]
+}

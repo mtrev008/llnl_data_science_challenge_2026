@@ -98,7 +98,7 @@ At its core, MCP follows a **client-server architecture**:
 In this challenge, the MCP server is implemented with [FastMCP tools](https://gofastmcp.com/servers/tools). FastMCP turns normal Python functions into tool definitions that an MCP client, such as Codex CLI, can discover and call. The important pieces are:
 
 * **The `@mcp.tool()` decorator exposes the function.** A function is not available to Codex through MCP unless it is registered as a tool.
-* **The function name becomes the tool name.** For example, `segment_ct_dataset` is the name the client sees unless you explicitly override it in the decorator.
+* **The function name becomes the tool name.** For example, `segment_ct_global_threshold` is the name the client sees unless you explicitly override it in the decorator.
 * **The docstring becomes the tool description.** Write docstrings that tell the agent what the tool does, what each argument means, and what the return value represents.
 * **Type annotations define the input schema.** Parameters such as `input_filepath: str`, `threshold: float`, and `axis: int = 0` are converted into the JSON schema the client uses when calling the tool.
 * **Parameters without defaults are required; parameters with defaults are optional.** For example, `axis: int = 0` can be omitted by the agent, but `input_filepath` must be supplied.
@@ -113,7 +113,7 @@ from fastmcp import FastMCP
 mcp = FastMCP("CT Segmentation")
 
 @mcp.tool()
-def segment_ct_dataset(input_filepath: str, output_filepath: str, threshold: float) -> str:
+def segment_ct_global_threshold(input_filepath: str, output_filepath: str, threshold: float) -> dict:
     """Segment a 3D CT dataset with a density threshold and save the mask."""
     # Load data, create mask, save output...
     return f"Saved segmentation to {output_filepath}"
@@ -123,6 +123,25 @@ if __name__ == "__main__":
 ```
 
 The server script in this repository, `src/mcp_server.py`, should follow this pattern as you add each tool.
+
+#### Segmentation methods
+
+The repository exposes two deliberately distinct segmentation tools:
+
+- `segment_ct_global_threshold` applies one fixed threshold to every voxel. It
+  is the baseline method for synthetic or intensity-uniform volumes.
+- `segment_ct_brightness_corrected` anchors a calibrated threshold on a
+  reference slice and adjusts the threshold of other Z slices using a smoothed
+  slice-median intensity profile. It is the recommended production method for
+  the LLNL 9x9x9 CT dataset because that scan exhibits slice-dependent
+  brightness drift.
+
+The combined `segmentation_skeletonization_agent` compares the fixed-threshold
+baseline with the brightness-corrected candidate, validates representative
+slices and whole-volume statistics, and uses the adaptive result only when the
+evidence supports it. The authoritative adaptive implementation is
+`src/threshold_optimizer.py`; the MCP tool delegates to that implementation
+rather than duplicating it.
 
 #### Visualization tools
 
@@ -163,15 +182,25 @@ The images below show the same 2D slice from the `9x9x9_octet_lattice` dataset a
 
 In the first task, you should create the following function as an MCP tool: 
 ```python
-def segment_ct_dataset(input_filepath: str, output_filepath: str, threshold: float) -> str:
+def segment_ct_global_threshold(input_filepath: str, output_filepath: str, threshold: float) -> dict:
     pass # Implementation goes here
 ```
 
-Add the MCP tools to your Codex CLI configuration file at `~/.codex/config.toml` and then test it in the Codex CLI. You should add the following block, making sure to use the absolute paths for your Python executable and the server script. Replace `<PATH_TO_PYTHON_EXE>` with the path to your Python executable and `<PATH_TO_DSSI_CHALLENGE>` with the path to your DSSI Challenge directory:
+This project uses the challenge's locked Conda interpreter rather than a bare
+`python` command. Verify the environment before running the tools:
+
+```powershell
+& "C:\Users\andre\miniconda3\envs\dssi_env\python.exe" -c "import sys, numpy, scipy, skimage, tifffile, fastmcp, pandas; print(sys.executable)"
+& "C:\Users\andre\miniconda3\envs\dssi_env\python.exe" -m unittest discover -s tests -v
+```
+
+Add the MCP tools to your Codex CLI configuration file at `~/.codex/config.toml`
+and then test it in the Codex CLI. Point the server at the locked `dssi_env`
+Python executable:
 
 ```toml
 [mcp_servers.segmentation-tools]
-command = "<PATH_TO_PYTHON_EXE>"
+command = "C:\\Users\\andre\\miniconda3\\envs\\dssi_env\\python.exe"
 args = ["<PATH_TO_DSSI_CHALLENGE>/src/mcp_server.py"]
 env = {}
 ```
@@ -223,7 +252,7 @@ This project-specific skill is already located in the `.agents/skills/nde_report
 
 This skill is designed to demonstrate three core capabilities:
 1. It runs a local Python script (`3d_visualize`).
-2. It can autonomously invoke your custom MCP functions (`segment_ct_dataset()` and `skeletonize()`).
+2. It can autonomously invoke your custom MCP functions (`segment_ct_global_threshold()`, `segment_ct_brightness_corrected()`, and `skeletonize()`).
 3. It contains specific system instructions on how to structure and generate the final report.
 
 To trigger this skill, tell Codex: 
@@ -237,7 +266,7 @@ After creating or changing a skill, close and restart Codex CLI before trying to
 
 Here are a few ideas for skills you could build for this dataset:
 *   **Metadata Extractor:** A skill that loads a generated `.npy` file and simply prints out basic metadata like its shape, data type, and the maximum and minimum values to the terminal.
-*   **Threshold Optimizer:** A skill that calls the `segment_ct_dataset()` MCP tool multiple times with different threshold values (e.g., 0.3, 0.5, 0.7) and saves the results in separate files for comparison.
+*   **Threshold Optimizer:** A skill that compares `segment_ct_global_threshold()` baseline candidates with `segment_ct_brightness_corrected()` candidates and saves their metrics and results separately.
 
 ### Task 6: Subagents
 
@@ -245,7 +274,10 @@ In this task, you will create a specialized **Subagent** to handle a complex par
 
 Using a multi-agent approach is incredibly powerful for complex workflows because each subagent maintains its own distinct **context window**. Instead of crowding a single agent's short-term memory with instructions for loading data, segmenting images, and writing a report all at once, you assign dedicated subagents to tackle specific, isolated problems. This reduces confusion, allows agents to iterate deeply on a single task, and enables specialized instructions without overwhelming the primary agent.
 
-Your goal is to build a **Segmentation Subagent**. This agent should automatically segment a lattice structure and generate a report of its findings. 
+This repository implements one combined **Segmentation and Skeletonization
+Subagent** named `segmentation_skeletonization_agent`. It segments a lattice,
+creates its complete 3D skeleton, validates both outputs, and generates a
+traceable report.
 
 To create a Codex subagent, you define it in a TOML file under `.codex/agents/`. 
 
@@ -375,9 +407,9 @@ from fastmcp import FastMCP
 mcp = FastMCP("CT Segmentation")
 
 @mcp.tool()
-def segment_ct_dataset(input_filepath: str, output_filepath: str, threshold: float) -> str:
+def segment_ct_global_threshold(input_filepath: str, output_filepath: str, threshold: float) -> dict:
     """
-    Segments a 3D CT dataset based on a given density threshold value.
+    Segments a 3D CT dataset using one fixed baseline threshold.
     
     Args:
         input_filepath: Path to the input .npy file containing the 3D CT scan data.

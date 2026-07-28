@@ -1,48 +1,70 @@
+import argparse
+from pathlib import Path
+
 import numpy as np
-import os
+import tifffile
 from skimage.morphology import skeletonize
 
-def skeletonize_mask(file_path, output_path):
+
+def skeletonize_mask(input_filepath: str, output_filepath: str) -> np.ndarray:
     """
-    Creates a skeleton from a 3D segmentation mask.
+    Create and save a skeleton from a 3D segmentation mask.
     
     Args:
-        file_path (str): Path to the .npy file containing the 3D mask.
-        output_path (str): Path to save the extracted skeleton (.npy).
+        input_filepath: Path to a .npy, .tif, or .tiff 3D mask.
+        output_filepath: Path at which to save the skeleton as .npy or TIFF.
+
+    Returns:
+        The boolean 3D skeleton array.
     """
-    if not os.path.exists(file_path):
-        print(f"Error: File not found at {file_path}")
-        return
+    input_path = Path(input_filepath)
+    output_path = Path(output_filepath)
 
-    print(f"Loading mask from {file_path}...")
-    mask = np.load(file_path)
-    print(f"Original mask shape: {mask.shape}")
-    
-    # Ensure the mask is boolean
-    if mask.dtype != bool:
-        print("Converting mask to boolean array...")
-        # Assuming background is 0 and object is > 0
-        mask = mask > 0
+    if input_path.suffix.lower() not in {".npy", ".tif", ".tiff"}:
+        raise ValueError("input_filepath must end in .npy, .tif, or .tiff")
+    if output_path.suffix.lower() not in {".npy", ".tif", ".tiff"}:
+        raise ValueError("output_filepath must end in .npy, .tif, or .tiff")
+    if not input_path.is_file():
+        raise FileNotFoundError(f"segmentation mask not found: {input_path}")
+    if input_path.resolve() == output_path.resolve():
+        raise ValueError("output_filepath must not overwrite the input mask")
 
-    print("Extracting skeleton (this may take a moment for 3D data)...")
-    skeleton = skeletonize(mask)
-    
-    print(f"Skeleton extracted. Non-zero voxels: {np.count_nonzero(skeleton)}")
-    
-    np.save(output_path, skeleton)
-    print(f"Saved skeleton to: {output_path}")
-    
-    return skeleton
+    if input_path.suffix.lower() == ".npy":
+        mask = np.load(input_path, mmap_mode="r", allow_pickle=False)
+    else:
+        mask = tifffile.memmap(input_path)
+
+    if mask.ndim != 3:
+        raise ValueError(f"expected a 3D segmentation mask, got shape {mask.shape}")
+
+    result = skeletonize(np.asarray(mask) > 0)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if output_path.suffix.lower() == ".npy":
+        np.save(output_path, result, allow_pickle=False)
+    else:
+        tifffile.imwrite(
+            output_path,
+            result.astype(np.uint8) * 255,
+            bigtiff=True,
+            photometric="minisblack",
+        )
+    return result
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Create a 3D skeleton from a binary NPY or TIFF mask."
+    )
+    parser.add_argument("input", type=Path, help="Input 3D segmentation mask")
+    parser.add_argument("output", type=Path, help="Output 3D skeleton")
+    args = parser.parse_args()
+
+    result = skeletonize_mask(str(args.input), str(args.output))
+    print(
+        f"Skeletonized {args.input.resolve()}; saved {args.output.resolve()} "
+        f"with shape {result.shape} and {np.count_nonzero(result)} skeleton voxels."
+    )
+
 
 if __name__ == "__main__":
-    # Hardcoded parameters for testing
-    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "unitcell", "unitcell.npy"))
-    output_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "octet_truss_unit_cell_skeleton.npy"))
-    
-    # Create the data directory if it doesn't exist
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
-    skeletonize_mask(
-        file_path=file_path, 
-        output_path=output_path
-    )
+    main()

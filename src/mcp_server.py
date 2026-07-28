@@ -18,8 +18,11 @@ os.environ.setdefault(
 from fastmcp import FastMCP
 import numpy as np
 import pandas as pd
+import tifffile
 
 from data_validation_updated import profile_json, profile_tiff
+from skeletonization import skeletonize_mask
+from threshold_optimizer import segment_brightness_corrected
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -93,21 +96,112 @@ def _run_visualization(
 
 
 @mcp.tool()
-def segment_ct_dataset(
+def segment_ct_global_threshold(
     input_filepath: str,
     output_filepath: str,
     threshold: float,
-) -> str:
-    """Segment a 3D NPY CT dataset with a threshold and save a binary NPY mask."""
-    # This challenge tool remains outside the visualization-agent scope.
-    raise NotImplementedError("Segmentation implementation has not been added yet.")
+) -> dict[str, Any]:
+    """
+    Segment a 3D CT volume using one fixed threshold for every voxel.
+
+    This is a baseline method for intensity-uniform or synthetic volumes. For
+    the LLNL 9x9x9 CT dataset, prefer segment_ct_brightness_corrected.
+
+    Args:
+        input_filepath: Input 3D .npy, .tif, or .tiff CT volume.
+        output_filepath: Output .npy, .tif, or .tiff binary mask.
+        threshold: Voxels greater than or equal to this value are foreground.
+
+    Returns:
+        Structured method, shape, encoding, voxel counts, and output metadata.
+    """
+    input_path = Path(input_filepath).expanduser().resolve()
+    output_path = Path(output_filepath).expanduser().resolve()
+
+    if input_path.suffix.lower() == ".npy":
+        volume = np.load(input_path, mmap_mode="r", allow_pickle=False)
+    elif input_path.suffix.lower() in {".tif", ".tiff"}:
+        volume = tifffile.memmap(input_path)
+    else:
+        raise ValueError("input_filepath must end in .npy, .tif, or .tiff")
+
+    if volume.ndim != 3:
+        raise ValueError(f"expected a 3D CT volume, got shape {volume.shape}")
+    if not np.isfinite(threshold):
+        raise ValueError("threshold must be finite")
+    if input_path == output_path:
+        raise ValueError("output_filepath must not overwrite the input volume")
+
+    mask = np.asarray(volume >= threshold, dtype=np.uint8)
+    foreground_voxels = int(np.count_nonzero(mask))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if output_path.suffix.lower() == ".npy":
+        np.save(output_path, mask, allow_pickle=False)
+        encoding = "0/1"
+    elif output_path.suffix.lower() in {".tif", ".tiff"}:
+        # TIFF viewers generally display uint8 data on a 0-255 scale. Store
+        # foreground as 255 so the binary structure is visibly white rather
+        # than an almost-black intensity of 1.
+        tifffile.imwrite(output_path, mask * np.uint8(255), photometric="minisblack")
+        encoding = "0/255"
+    else:
+        raise ValueError("output_filepath must end in .npy, .tif, or .tiff")
+
+    return {
+        "method": "global_threshold",
+        "input": str(input_path),
+        "output": str(output_path),
+        "shape_zyx": list(mask.shape),
+        "input_dtype": str(volume.dtype),
+        "threshold": float(threshold),
+        "mask_encoding": encoding,
+        "foreground_voxels": foreground_voxels,
+        "background_voxels": int(mask.size - foreground_voxels),
+    }
+
+
+@mcp.tool()
+def segment_ct_brightness_corrected(
+    input_filepath: str,
+    output_filepath: str,
+    reference_slice: int = 380,
+    reference_threshold: float = 40049.0,
+    smoothing_sigma: float = 8.0,
+) -> dict[str, Any]:
+    """
+    Segment a 3D CT volume with a smoothed per-slice brightness correction.
+
+    This is the recommended production method for the LLNL 9x9x9 CT dataset.
+    It anchors the threshold on a calibrated reference slice and adjusts other
+    slices using their smoothed median-intensity profile.
+    """
+    return segment_brightness_corrected(
+        Path(input_filepath),
+        Path(output_filepath),
+        reference_slice=reference_slice,
+        reference_threshold=reference_threshold,
+        smoothing_sigma=smoothing_sigma,
+    )
 
 
 @mcp.tool()
 def skeletonize(input_filepath: str, output_filepath: str) -> str:
-    """Create and save a skeleton from a 3D NPY segmentation mask."""
-    # This challenge tool remains outside the visualization-agent scope.
-    raise NotImplementedError("Skeletonization implementation has not been added yet.")
+    """
+    Creates a skeleton from a 3D segmentation mask.
+
+    Args:
+        input_filepath: Path to the .npy, .tif, or .tiff file containing the 3D mask.
+        output_filepath: Path to save the extracted skeleton (.npy, .tif, or .tiff).
+
+    Returns:
+        A status message indicating success and the save location, or an error message.
+    """
+    result = skeletonize_mask(input_filepath, output_filepath)
+
+    return (
+        f"Skeletonized {input_filepath}; saved {output_filepath} with shape "
+        f"{result.shape} and {np.count_nonzero(result)} skeleton voxels."
+    )
 
 
 @mcp.tool()
