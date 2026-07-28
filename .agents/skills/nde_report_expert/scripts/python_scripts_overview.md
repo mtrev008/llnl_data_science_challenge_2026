@@ -42,15 +42,21 @@ NPY or TIFF and is used to locate shaft centers, branches, and gaps.
 
 ### `src/strut_thickness_analysis.py`
 
-**What it does:** Measures strut diameter in microns and reports thin, accurate,
-and thick regions. It can also compare expected struts from a registered JSON
-with the measured volume.
+**What it does:** Treats existing segmented-mask and skeleton TIFF stacks as a
+single 3D volume, converts the skeleton into a graph, and measures every
+retained strut.
 
-**How it works:** The script samples evenly spaced Z slices and skeletonizes a
-3D neighborhood around each one. Skeleton points with exactly two neighbors are
-treated as shaft centerlines; branch regions are excluded so thick junctions do
-not inflate shaft measurements. A 3D Euclidean distance transform gives the
-distance from each centerline point to the nearest background voxel.
+**How it works:** Adjacent branch voxels become junction nodes and degree-two
+paths become struts. Short paths are removed as noise. A slabbed 3D Euclidean
+distance transform measures diameter along every path without allocating a
+full-volume distance array. Z/Y/X voxel spacing is applied independently to
+the distance transform and all physical lengths. Overlapping slab guards are
+expanded when a radius approaches a slab halo, preventing seam truncation.
+
+The graph retains the original skeleton coordinates, but thickness is sampled
+from the strongest local EDT ridge in a 3×3×3 neighborhood. This corrects
+off-center skeleton paths without changing topology. Junction and endpoint
+neighborhoods are excluded from shaft statistics.
 
 Because the distance transform is given the physical voxel spacing, its result
 is already a radius in microns. The diameter formula is:
@@ -66,24 +72,56 @@ For an isotropic scan, this is equivalent to:
 = 2 \times \text{radius}_{voxels} \times \text{voxel size}_{\mu m/voxel}
 \]
 
-The default voxel size is \(58.1\ \mu m/voxel\). For example, an EDT radius of
-3 voxels corresponds to \(2 \times 3 \times 58.1 = 348.6\ \mu m\).
+The default voxel size is \(58.09\ \mu m/voxel\). For example, an EDT radius of
+3 voxels corresponds to \(2 \times 3 \times 58.09 = 348.54\ \mu m\).
 
-The tolerance bounds are:
+Thickness defects are relative to each detected strut rather than to one
+global diameter alone. Ordered shaft samples are compared with that strut's
+own median. At least three consecutive centerline samples below 50% of the
+median are required for `potentially_broken`; isolated low-radius samples are
+ignored. The P10 distribution and robust global cutoff remain analysis and
+plot diagnostics, but they are not included in the concise Markdown summary.
 
-\[
-\text{lower} = \text{target}(1-\text{tolerance}/100)
-\]
+Nearby aligned, similarly thick endpoints are matched across weak or absent
+mask, skeleton, and raw-CT support. A compatible pair becomes one `broken`
+strut rather than two fragments. Completely missing struts are handled
+separately because they have no centerline thickness to measure.
 
-\[
-\text{upper} = \text{target}(1+\text{tolerance}/100)
-\]
+Missing topology is inferred only from the TIFF. Intact junction-to-junction
+paths teach the normal connection lengths and direction families. At least
+three different neighboring junctions must predict approximately the same
+empty site, their normalized direction imbalance must be below 0.65, and their
+predictions must include nonparallel directions. Predictions within 55% of the
+normal connection length are merged as one physical missing-node candidate.
+The local skeleton must be absent, while segmentation and normalized raw-CT
+support must each remain below 5%. Adjacent accepted missing nodes receive a
+shared cluster ID.
 
-Measurements below, within, or above these bounds are reported as too thin,
-accurate, or too thick. The script produces percentile, box, and CDF plots plus
-Markdown outlier summaries. In design-comparison mode, no foreground support
-along an expected centerline means `missing`; an internal unsupported run
-longer than twice the search radius means `broken`.
+A missing strut requires two present TIFF junctions, a locally expected
+connection direction, no observed graph edge, less than 20% material coverage,
+and a continuous unsupported run covering at least 80% of the connection.
+Connections touching a missing junction are not automatically counted as
+missing struts.
+
+The JSON is read only for the expected numbers of junction and strut records.
+Its positions, indices, and endpoint coordinates are never used. No
+JSON-to-TIFF transform or tilt estimate is calculated.
+
+To reject CT crop artifacts, reliable observed TIFF junctions define a 3D
+convex hull. Broken and missing-strut evidence must remain 1.5 normal observed
+strut lengths inside that hull. Missing-junction sites use a smaller margin of
+15% of the normal strut length, together with the balanced three-neighbor
+requirement, so a real node hole near the visible surface can survive while
+outward crop projections are rejected. Boundary candidates are discarded.
+
+The script writes thickness, topology-strut, and missing-junction CSV files.
+Its concise Markdown summary contains only the main strut and defect counts;
+it does not include PNG links, slice tables, JSON-usage notes, or detailed
+diagnostics. All PNGs are stored in the output directory's `png_outputs/`
+subfolder. Combined defect sheets use magenta for missing junctions, yellow
+for missing struts, red for broken fragment pairs, and orange for sustained
+relative thinning. One representative slice is rendered per continuous event
+and its complete Z range is printed in the panel label.
 
 ### `src/strut_density_analysis.py`
 
@@ -174,25 +212,6 @@ its patch contains skeleton. Neither endpoint present means `missing`; exactly
 one endpoint present means `broken`. It saves the processed endpoint slices and
 a Markdown count summary.
 
-### `src/evaluation_of_segmentations.py`
-
-**What it does:** Scores a 2D segmentation result against a ground-truth image
-from 0 to 5.
-
-**How it works:** It extracts foreground masks, removes likely plot artifacts,
-crops empty margins, and resizes the result to the truth. Its main overlap
-metric is intersection over union:
-
-\[
-IoU = \frac{TP}{TP+FP+FN}
-\]
-
-It also compares connected components, skeleton endpoints, junctions,
-over-segmentation, under-segmentation, and small artifacts. A weighted quality
-value uses 35% IoU, 20% connectivity, 20% junction agreement, 10% endpoint
-agreement, 7.5% each for over/under-segmentation, and an artifact penalty.
-Rule-based cutoffs convert that value and the topology errors into the final
-integer score and Markdown explanation.
 
 ## Choosing between related scripts
 

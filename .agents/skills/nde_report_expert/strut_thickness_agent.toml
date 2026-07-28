@@ -68,7 +68,7 @@ Final response:
   thickness measurements.
 
 Scientific defaults:
-- The analyzer defaults to a published cubic voxel size of 58.1 µm and this
+- The analyzer defaults to a published cubic voxel size of 58.09 µm and this
   dataset's nominal 350 µm design diameter.
 - User-supplied calibration values override these defaults for other scans.
 - Do not force detected defect counts to match literature proportions.
