@@ -1,0 +1,16 @@
+# Domain-expert RAG dependencies for:
+# C:\Users\andre\miniconda3\envs\dssi_env\python.exe
+#
+# Install only with explicit approval:
+# & "C:\Users\andre\miniconda3\envs\dssi_env\python.exe" -m pip install -r `
+#   ".codex\agents\domain_expert\requirements.txt"
+
+fastmcp
+numpy
+openpyxl
+pandas
+pypdf
+python-dotenv
+
+# Retrieval, ingestion, and citation-regression tests.
+pytest

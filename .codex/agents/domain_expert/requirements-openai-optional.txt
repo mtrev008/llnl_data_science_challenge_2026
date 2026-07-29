@@ -1,0 +1,5 @@
+# Optional only: use when explicitly selecting RAG_EMBEDDING_PROVIDER=openai
+# or running the OpenAI-backed diagnostic answer CLI.
+
+-r requirements.txt
+openai
