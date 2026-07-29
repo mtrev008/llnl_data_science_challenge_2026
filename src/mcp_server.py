@@ -1,14 +1,37 @@
 from fastmcp import FastMCP
+import os
 from pathlib import Path
+
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib-cache")
 
 import numpy as np
 import tifffile
 from matplotlib import image as mpl_image
 
 try:
+    from src.registration_workflow import (
+        DEFAULT_CELL_ARRANGEMENT,
+        DEFAULT_CT_SPACING,
+        DEFAULT_JSON_PATH,
+        DEFAULT_JSON_SPACING,
+        DEFAULT_OUTPUT_DIR,
+        DEFAULT_TIFF_PATH,
+        RegistrationConfig,
+        run_registration_workflow,
+    )
     from src.workflow_tools import run_pipeline_manager as run_pipeline_manager_impl
     from src.skeletonization import skeletonize_mask
 except ModuleNotFoundError:  # Supports running this file directly from src/.
+    from registration_workflow import (
+        DEFAULT_CELL_ARRANGEMENT,
+        DEFAULT_CT_SPACING,
+        DEFAULT_JSON_PATH,
+        DEFAULT_JSON_SPACING,
+        DEFAULT_OUTPUT_DIR,
+        DEFAULT_TIFF_PATH,
+        RegistrationConfig,
+        run_registration_workflow,
+    )
     from workflow_tools import run_pipeline_manager as run_pipeline_manager_impl
     from skeletonization import skeletonize_mask
 
@@ -144,6 +167,58 @@ def run_pipeline_manager(output_report: str = "reports/report.md") -> str:
         A status message with the pipeline result and report path.
     """
     return run_pipeline_manager_impl(output_report)
+
+
+@mcp.tool()
+def register_lattice_to_ct(
+    json_filepath: str = str(DEFAULT_JSON_PATH),
+    tif_filepath: str = str(DEFAULT_TIFF_PATH),
+    output_directory: str = str(DEFAULT_OUTPUT_DIR),
+    ct_spacing_x: float = DEFAULT_CT_SPACING[0],
+    ct_spacing_y: float = DEFAULT_CT_SPACING[1],
+    ct_spacing_z: float = DEFAULT_CT_SPACING[2],
+    json_spacing: float = DEFAULT_JSON_SPACING,
+    cells_x: int = DEFAULT_CELL_ARRANGEMENT[0],
+    cells_y: int = DEFAULT_CELL_ARRANGEMENT[1],
+    cells_z: int = DEFAULT_CELL_ARRANGEMENT[2],
+    downsample: int = 1,
+) -> str:
+    """
+    Runs the 7-stage rigid lattice-registration workflow for a CT TIFF stack.
+
+    Args:
+        json_filepath: Path to the nominal lattice JSON graph.
+        tif_filepath: Path to the 3D CT TIFF stack.
+        output_directory: Directory where registration artifacts will be written.
+        ct_spacing_x: CT voxel spacing along x in physical units.
+        ct_spacing_y: CT voxel spacing along y in physical units.
+        ct_spacing_z: CT voxel spacing along z in physical units.
+        json_spacing: Multiplier converting nominal JSON positions into CT physical units.
+        cells_x: Unit cells present in the scan along x.
+        cells_y: Unit cells present in the scan along y.
+        cells_z: Unit cells present in the scan along z.
+        downsample: Integer CT downsampling factor used before segmentation and junction search.
+
+    Returns:
+        A status string summarizing the registration result and output paths.
+    """
+    config = RegistrationConfig(
+        json_path=Path(json_filepath),
+        tif_path=Path(tif_filepath),
+        output_dir=Path(output_directory),
+        ct_spacing=(float(ct_spacing_x), float(ct_spacing_y), float(ct_spacing_z)),
+        json_spacing=float(json_spacing),
+        cells=(int(cells_x), int(cells_y), int(cells_z)),
+        downsample=int(downsample),
+    )
+    result = run_registration_workflow(config)
+    metrics = result["metrics"]
+    return (
+        f"Registration passed for {json_filepath} against {tif_filepath}; "
+        f"matched {metrics['matched_junctions']} junctions with RMSE {metrics['rmse']:.6g}. "
+        f"Saved outputs under {output_directory}, including "
+        f"{result['artifacts']['registered_lattice']}."
+    )
 
 if __name__ == "__main__":
     # Run the FastMCP server, exposing the tools over standard I/O (default)

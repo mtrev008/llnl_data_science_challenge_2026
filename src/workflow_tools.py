@@ -51,7 +51,11 @@ PIPELINE_STEPS = [
         "script": PROJECT_ROOT / ".codex/agents/defect_detection/run.py",
         "expected_phrase": "Detecting Defects pipeline step",
         "artifacts": [
-            "data/missing_struts/analysis/observed_lattice.json",
+            "data/missing_struts/analysis/defect_method_comparison.json",
+            "data/missing_struts/analysis/defect_method_comparison.md",
+            "data/missing_struts/analysis/defect_method_comparison/clustering_baseline_result.json",
+            "data/missing_struts/analysis/defect_method_comparison/simple_json_assisted_result.json",
+            "data/missing_struts/analysis/defect_method_comparison/simple_mask_only_result.json",
             "data/missing_struts/analysis/cluster_summary.json",
             "data/missing_struts/analysis/cluster_labels.json",
             "data/missing_struts/analysis/per_strut_defects.json",
@@ -67,9 +71,8 @@ PIPELINE_STEPS = [
         "script": PROJECT_ROOT / ".codex/agents/visualization/run.py",
         "expected_phrase": "Visualization pipeline step",
         "artifacts": [
-            "data/missing_struts/analysis/raw_slice_380.png",
-            "data/missing_struts/analysis/segmentation_view_a.png",
-            "data/missing_struts/analysis/segmentation_view_b.png",
+            "data/missing_struts/analysis/defect_struts_overview.png",
+            "data/missing_struts/analysis/defect_struts_visualization.md",
         ],
     },
 ]
@@ -166,85 +169,88 @@ def collect_step_results(step_name: str) -> list[dict[str, Any]]:
             },
         ]
     if step_name == "Detecting Defects":
-        per_strut = read_json_result("data/missing_struts/analysis/per_strut_defects.json")
-        anomaly_examples = [item for item in per_strut if item["classification"] != "present"][:10]
-        compact_examples = [
+        comparison = read_json_result("data/missing_struts/analysis/defect_method_comparison.json")
+        baseline = read_json_result(
+            "data/missing_struts/analysis/defect_method_comparison/clustering_baseline_result.json"
+        )
+        json_assisted = read_json_result(
+            "data/missing_struts/analysis/defect_method_comparison/simple_json_assisted_result.json"
+        )
+        mask_only = read_json_result(
+            "data/missing_struts/analysis/defect_method_comparison/simple_mask_only_result.json"
+        )
+        baseline_examples = [
             {
                 "strut_id": item["strut_id"],
-                "classification": item["classification"],
+                "presence_status": item.get("presence_status"),
+                "classification": item.get("classification"),
                 "weak_subtype": item.get("weak_subtype"),
-                "weak_subtype_reason": item.get("weak_subtype_reason"),
                 "reason": item["reason"],
-                "coverage_ratio": item["coverage_ratio"],
                 "profile_mean": item.get("profile_mean"),
                 "profile_min": item.get("profile_min"),
-                "low_profile_segments": item.get("low_profile_segments"),
                 "longest_low_profile_gap": item.get("longest_low_profile_gap"),
-                "profile_plot": item.get("profile_plot"),
-                "visual_evidence_png": item.get("visual_evidence_png"),
             }
-            for item in anomaly_examples
-        ]
+            for item in baseline["strut_records"]
+            if item.get("classification") != "present"
+        ][:10]
         return [
             {
-                "title": "Anomaly summary",
-                "source": "data/missing_struts/analysis/anomaly_summary.json",
-                "content": read_json_result("data/missing_struts/analysis/anomaly_summary.json"),
+                "title": "Method comparison summary",
+                "source": "data/missing_struts/analysis/defect_method_comparison.json",
+                "content": comparison,
             },
             {
-                "title": "Cluster summary",
-                "source": "data/missing_struts/analysis/cluster_summary.json",
-                "content": read_json_result("data/missing_struts/analysis/cluster_summary.json"),
-            },
-            {
-                "title": "Cluster labels",
-                "source": "data/missing_struts/analysis/cluster_labels.json",
-                "content": read_json_result("data/missing_struts/analysis/cluster_labels.json"),
-            },
-            {
-                "title": "Visual review index",
-                "source": "data/missing_struts/analysis/defect_visual_review/visual_review_index.json",
-                "content": read_json_result(
-                    "data/missing_struts/analysis/defect_visual_review/visual_review_index.json"
-                ),
-            },
-            {
-                "title": "External model review compatibility record",
-                "source": "data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json",
-                "content": read_json_result(
-                    "data/missing_struts/analysis/defect_visual_review/hf_model_review_results.json"
-                ),
-            },
-            {
-                "title": "Example per-strut classifications",
-                "source": "data/missing_struts/analysis/per_strut_defects.json",
+                "title": "Clustering baseline result",
+                "source": "data/missing_struts/analysis/defect_method_comparison/clustering_baseline_result.json",
                 "content": {
-                    "total_records": len(per_strut),
-                    "first_10_anomalies": compact_examples,
+                    "method_name": baseline["method_name"],
+                    "status": baseline["status"],
+                    "summary_metrics": baseline["summary_metrics"],
                 },
             },
             {
-                "title": "Anomaly Markdown summary",
-                "source": "data/missing_struts/analysis/anomaly_summary.md",
-                "content": read_markdown_result("data/missing_struts/analysis/anomaly_summary.md"),
+                "title": "Simple JSON-assisted result",
+                "source": "data/missing_struts/analysis/defect_method_comparison/simple_json_assisted_result.json",
+                "content": {
+                    "method_name": json_assisted["method_name"],
+                    "status": json_assisted["status"],
+                    "summary_metrics": json_assisted["summary_metrics"],
+                },
+            },
+            {
+                "title": "Simple mask-only result",
+                "source": "data/missing_struts/analysis/defect_method_comparison/simple_mask_only_result.json",
+                "content": {
+                    "method_name": mask_only["method_name"],
+                    "status": mask_only["status"],
+                    "summary_metrics": mask_only["summary_metrics"],
+                },
+            },
+            {
+                "title": "Baseline example strut classifications",
+                "source": "data/missing_struts/analysis/per_strut_defects.json",
+                "content": {
+                    "total_records": len(baseline["strut_records"]),
+                    "first_10_non_present": baseline_examples,
+                },
+            },
+            {
+                "title": "Comparison Markdown summary",
+                "source": "data/missing_struts/analysis/defect_method_comparison.md",
+                "content": read_markdown_result("data/missing_struts/analysis/defect_method_comparison.md"),
             },
         ]
     if step_name == "Visualization":
         return [
             {
-                "title": "Raw slice visualization",
-                "source": "data/missing_struts/analysis/raw_slice_380.png",
-                "content": summarize_png("data/missing_struts/analysis/raw_slice_380.png"),
+                "title": "Defect strut overview",
+                "source": "data/missing_struts/analysis/defect_struts_overview.png",
+                "content": summarize_png("data/missing_struts/analysis/defect_struts_overview.png"),
             },
             {
-                "title": "Segmentation view A",
-                "source": "data/missing_struts/analysis/segmentation_view_a.png",
-                "content": summarize_png("data/missing_struts/analysis/segmentation_view_a.png"),
-            },
-            {
-                "title": "Segmentation view B",
-                "source": "data/missing_struts/analysis/segmentation_view_b.png",
-                "content": summarize_png("data/missing_struts/analysis/segmentation_view_b.png"),
+                "title": "Visualization summary",
+                "source": "data/missing_struts/analysis/defect_struts_visualization.md",
+                "content": read_markdown_result("data/missing_struts/analysis/defect_struts_visualization.md"),
             },
         ]
     return []

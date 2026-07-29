@@ -4,3 +4,4 @@ fastmcp
 scikit-image
 tifffile
 scikit-learn
+scipy

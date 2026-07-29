@@ -26,6 +26,59 @@ By the end of the challenge, participants should understand how to move from sta
 - `.agents/skills/` - project-specific Codex skills
 - `.codex/agents/` - project-specific Codex subagent definitions
 
+## Lattice Registration Workflow
+
+This repository now includes a dedicated registration workflow for the `data/missing_struts` specimen family. It is separate from the existing five-stage defect pipeline and is intended to solve stages 1-7 of lattice registration only:
+
+1. parse the nominal lattice JSON graph
+2. segment the CT and detect CT junction centers
+3. infer a tilted lattice basis from detected junctions
+4. fit the known unit-cell block to the CT
+5. assign junction correspondences
+6. solve a rigid rotation plus translation only
+7. write metrics and visual diagnostics
+
+The default registration entrypoints target the Brian Tran `0.5%` specimen and the original nominal graph:
+
+- Nominal JSON: `data/missing_struts/octet_truss_9x9x9.json`
+- CT TIFF: `data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif`
+- Output directory: `data/missing_struts/analysis/registration/`
+- Default cell arrangement preset: `4 3 2`
+
+Run the dedicated workflow directly:
+
+```bash
+python .codex/agents/registration/run.py
+```
+
+Or call the shared implementation with explicit overrides:
+
+```bash
+python src/registration_workflow.py \
+  --json data/missing_struts/octet_truss_9x9x9.json \
+  --tif "data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif" \
+  --ct-spacing 0.05809 0.05809 0.05809 \
+  --json-spacing 2.293904943560482 \
+  --cells 4 3 2 \
+  --output data/missing_struts/analysis/registration
+```
+
+The registration workflow writes:
+
+- `nominal_summary.json`
+- `segmentation_mask.tif`
+- `ct_junction_candidates.csv`
+- `ct_junction_candidates.npy`
+- `registration_metrics.json`
+- `junction_correspondences.csv`
+- `registered_json_junctions.npy`
+- `registration_3d_overlay.png`
+- `registration_mip_overlays.png`
+- `registration_error_histogram.png`
+- `registered_lattice.json`
+
+`registered_lattice.json` preserves the original junction, strut, and unit-cell IDs and updates junction positions into CT voxel-space coordinates for later downstream analysis.
+
 ## Contact
 
 This challenge was created by Haichao Miao, Research Scientist at LLNL, miao1 (at) llnl.gov

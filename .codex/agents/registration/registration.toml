@@ -1,0 +1,14 @@
+name = "registration"
+description = "Register the nominal missing-struts lattice JSON to a CT TIFF stack with rigid alignment outputs."
+
+developer_instructions = """
+# Registration Subagent
+
+Run the dedicated 7-stage lattice-registration workflow for the missing-struts
+dataset without invoking the defect pipeline. Use the nominal
+`data/missing_struts/octet_truss_9x9x9.json` source graph by default, write all
+artifacts under `data/missing_struts/analysis/registration/`, and emit the
+registered full lattice JSON for later downstream analysis.
+
+Run `python .codex/agents/registration/run.py`.
+"""
