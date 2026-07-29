@@ -123,46 +123,6 @@ for missing struts, red for broken fragment pairs, and orange for sustained
 relative thinning. One representative slice is rendered per continuous event
 and its complete Z range is printed in the panel label.
 
-### `src/strut_density_analysis.py`
-
-**What it does:** Assigns every expected strut a relative `0–1`
-material-presence score and classifies it as present, uncertain, low-density,
-broken, or missing.
-
-**How it works:** At points along each ideal strut, the script samples a disk
-perpendicular to the shaft and calculates:
-
-- mask score: mean segmented occupancy in the sampled disks;
-- raw score: mean slice-normalized CT intensity;
-- thickness score: equivalent thickness divided by target thickness;
-- continuity score: supported centerline coverage penalized by the longest gap.
-
-Raw intensity is normalized per slice using:
-
-\[
-I_{norm} = \operatorname{clip}
-\left(\frac{I-\operatorname{median}(slice)}
-{P_{99.5}(slice)-\operatorname{median}(slice)},0,1\right)
-\]
-
-Disk occupancy is converted to an equivalent thickness using:
-
-\[
-t_{equiv} = t_{target}\sqrt{\text{occupancy}}
-\]
-
-The square root is used because cross-sectional area is proportional to
-diameter squared. The final density score is a weighted sum:
-
-\[
-D = w_mM + w_rR + w_tT + w_cC
-\]
-
-The default weights are 0.30 mask, 0.30 raw CT, 0.25 thickness, and 0.15
-continuity. Otsu's method finds a data-driven score threshold. No support means
-`missing`; a gap longer than twice the search radius means `broken`; values
-clearly below the threshold are `low_density`; borderline or conflicting mask
-and raw signals are `uncertain`; the remainder are `present`.
 
 ### `src/mcp_server.py`
 
@@ -185,32 +145,6 @@ skeleton overlay.
 into a triangle surface mesh. Matplotlib renders that mesh at the requested
 elevation and azimuth. The overlay version plots nonzero skeleton coordinates
 as red points on a transparent surface.
-
-### `src/anomaly_identifier.py`
-
-**What it does:** Finds lattice defects by comparing an observed skeleton graph
-with a registered reference design, then verifies candidates against the mask
-and raw CT.
-
-**How it works:** Skeleton voxels are connected into a graph; clustered branch
-voxels become junctions and paths between junctions become observed struts. A
-KD-tree measures each reference centerline point's distance to the observed
-graph. A long run beyond the matching tolerance becomes a candidate. Candidate
-points are then checked in local mask and raw-CT neighborhoods. Strong mask or
-raw coverage marks a likely segmentation weakness; low coverage plus an
-excessive gap confirms an anomaly.
-
-### `src/missing_strut_identifier.py`
-
-**What it does:** Performs a quicker endpoint-based count of missing and broken
-struts.
-
-**How it works:** It probes inward from each end of every reference strut. Only
-the required CT slices are normalized, thresholded, and skeletonized. An
-endpoint counts as present when its local mask coverage exceeds the minimum or
-its patch contains skeleton. Neither endpoint present means `missing`; exactly
-one endpoint present means `broken`. It saves the processed endpoint slices and
-a Markdown count summary.
 
 
 ## Choosing between related scripts
