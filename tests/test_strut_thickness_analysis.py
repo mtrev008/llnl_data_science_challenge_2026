@@ -13,7 +13,7 @@ from src import strut_thickness_analysis as analysis
 
 class TopologySensitivityTests(unittest.TestCase):
     def test_requested_tolerances(self):
-        self.assertEqual(analysis.MIN_MISSING_JUNCTION_SUPPORT, 2)
+        self.assertEqual(analysis.MIN_MISSING_JUNCTION_SUPPORT, 3)
         self.assertEqual(
             analysis.JUNCTION_PREDICTION_POSITION_TOLERANCE, 0.25
         )

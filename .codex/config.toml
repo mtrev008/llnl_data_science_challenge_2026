@@ -1,0 +1,7 @@
+[agents.segmentation_skeletonization_agent]
+description = "Optimize CT thresholds, segment a 3D lattice TIFF, and create its validated 3D skeleton."
+config_file = "../.agents/skills/nde_report_expert/segmentation_skeletonization_agent.toml"
+
+[agents.missing_strut_junction_agent]
+description = "Prepare a raw lattice TIFF and run focused missing-strut and missing-junction analysis."
+config_file = "../.agents/skills/nde_report_expert/missing_strut_junction_agent.toml"

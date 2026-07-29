@@ -1,159 +1,132 @@
 # Python Scripts: Purpose and Methods
 
-All project Python scripts are stored in `src/`. Together, they segment CT
-volumes, extract lattice centerlines, measure strut quality, detect defects, and
-create report visuals.
+The current project Python implementation consists of five scripts in `src/`.
+Together they prepare a raw CT volume, extract its lattice centerlines, analyze
+missing topology, expose selected operations through MCP, and create optional
+3D NPY visualizations.
 
-## Typical workflow
+## Current TIFF workflow
 
-1. Segment the raw CT scan with `threshold_optimizer.py`.
-2. Create centerlines with `skeletonization.py`.
-3. Measure thickness and density with the two strut-analysis scripts.
-4. Compare the measured lattice with its registered design to find defects.
-5. Evaluate results and generate 3D report images.
+1. Run `threshold_optimizer.py` on the raw CT TIFF to create a
+   brightness-corrected binary mask.
+2. Run `skeletonization.py` on that mask to create a complete 3D centerline
+   skeleton.
+3. Run `missing_strut_junction_analyzer.py` with the mask and skeleton. Supply
+   the raw TIFF for intensity evidence and optionally supply an expected-design
+   JSON for coordinate-free counts and structural priors.
+4. Review the analyzer CSV files, Markdown summary, and annotated PNG sheets.
+
+The `missing_strut_junction_agent` automates this workflow and delegates steps
+1–2 to `segmentation_skeletonization_agent`.
 
 ## Script reference
 
 ### `src/threshold_optimizer.py`
 
-**What it does:** Creates a binary segmentation while compensating for CT
-brightness changes between Z slices.
+**Purpose:** Segment a numeric 3D NPY or TIFF CT volume while compensating for
+slice-dependent brightness drift.
 
-**How it works:** It finds the median intensity \(m_z\) of every slice and
-smooths those medians with a 1D Gaussian filter to obtain \(p_z\). A known-good
-slice \(r\) and threshold \(T_r\) anchor the corrected threshold profile:
+**Method:** For every Z slice, the script measures the median intensity
+\(m_z\), smooths the resulting profile to obtain \(p_z\), and shifts a known
+reference threshold across the stack:
 
 \[
 T_z = p_z + (T_r - p_r)
 \]
 
-Each voxel in slice \(z\) is foreground when its intensity is at least \(T_z\).
-The result is saved as `0/1` in NPY or `0/255` in TIFF.
+Voxels at or above \(T_z\) become foreground. TIFF masks use `uint8` values
+`0/255`; NPY masks use `0/1`. The command-line defaults are reference slice
+380, reference threshold 40049, and Gaussian smoothing sigma 8. These are
+calibrated for the Brian Tran/LLNL 9x9x9 scan family and should be explicitly
+overridden for differently calibrated scans.
 
 ### `src/skeletonization.py`
 
-**What it does:** Reduces a 3D binary lattice mask to one-voxel-wide
-centerlines.
+**Purpose:** Reduce a 3D segmentation mask to topology-preserving centerlines.
 
-**How it works:** All values greater than zero become foreground, then
-scikit-image's topology-preserving 3D skeletonization thins the foreground
-without removing its basic connectivity. The resulting skeleton is saved as
-NPY or TIFF and is used to locate shaft centers, branches, and gaps.
+**Method:** Every nonzero mask voxel becomes foreground, then scikit-image's
+3D-capable `skeletonize` operation thins the complete volume. It does not
+skeletonize TIFF pages independently. Outputs may be NPY or TIFF; TIFF
+skeletons use `uint8` values `0/255`.
 
-### `src/strut_thickness_analysis.py`
+### `src/missing_strut_junction_analyzer.py`
 
-**What it does:** Treats existing segmented-mask and skeleton TIFF stacks as a
-single 3D volume, converts the skeleton into a graph, and measures every
-retained strut.
+**Purpose:** Detect missing struts, potential strut defects, and missing
+junctions from an observed mask and skeleton without using design coordinates.
 
-**How it works:** Adjacent branch voxels become junction nodes and degree-two
-paths become struts. Short paths are removed as noise. A slabbed 3D Euclidean
-distance transform measures diameter along every path without allocating a
-full-volume distance array. Z/Y/X voxel spacing is applied independently to
-the distance transform and all physical lengths. Overlapping slab guards are
-expanded when a radius approaches a slab halo, preventing seam truncation.
+**Inputs:** A segmented 3D TIFF is required. A matching skeleton TIFF and raw
+CT TIFF are strongly recommended. An expected-design JSON is optional.
 
-The graph retains the original skeleton coordinates, but thickness is sampled
-from the strongest local EDT ridge in a 3×3×3 neighborhood. This corrects
-off-center skeleton paths without changing topology. Junction and endpoint
-neighborhoods are excluded from shaft statistics.
+**Method:**
 
-Because the distance transform is given the physical voxel spacing, its result
-is already a radius in microns. The diameter formula is:
+- Convert the observed skeleton into paths between clustered physical
+  junctions and terminal endpoints.
+- Learn intact connection directions, structural families, and global and
+  local normal strut lengths from the TIFF-derived graph.
+- Infer empty junction sites from multiple geometrically consistent
+  neighboring predictions, then reject unsupported, imbalanced, duplicate, and
+  boundary candidates.
+- Project locally expected connections between observed junctions and evaluate
+  continuous support from skeleton, segmentation, and normalized raw CT.
+- Classify sufficiently absent connections as `missing`, shorter continuous
+  gaps as `potential_defect`, and supported connections as present.
+- Merge slice observations into physical 3D anomaly tracks before selecting
+  representative visualization slices.
 
-\[
-\text{diameter}_{\mu m} = 2 \times \text{EDT radius}_{\mu m}
-\]
+The expected JSON contributes coordinate-free design counts and structural
+priors only. Its positions and endpoint coordinates are not used to register
+or align the TIFF.
 
-For an isotropic scan, this is equivalent to:
+The focused workflow writes:
 
-\[
-\text{diameter}_{\mu m}
-= 2 \times \text{radius}_{voxels} \times \text{voxel size}_{\mu m/voxel}
-\]
+- `missing_struts.csv`
+- `potential_defects.csv`
+- `missing_junctions.csv`
+- `defect_summary.md`
+- `png_outputs/missing_anomalies_*.png`
 
-The default voxel size is \(58.09\ \mu m/voxel\). For example, an EDT radius of
-3 voxels corresponds to \(2 \times 3 \times 58.09 = 348.54\ \mu m\).
-
-Thickness defects are relative to each detected strut rather than to one
-global diameter alone. Ordered shaft samples are compared with that strut's
-own median. At least three consecutive centerline samples below 50% of the
-median are required for `potentially_broken`; isolated low-radius samples are
-ignored. The P10 distribution and robust global cutoff remain analysis and
-plot diagnostics, but they are not included in the concise Markdown summary.
-
-Nearby aligned, similarly thick endpoints are matched across weak or absent
-mask, skeleton, and raw-CT support. A compatible pair becomes one `broken`
-strut rather than two fragments. Completely missing struts are handled
-separately because they have no centerline thickness to measure.
-
-Missing topology is inferred only from the TIFF. Intact junction-to-junction
-paths teach the normal connection lengths and direction families. At least
-three different neighboring junctions must predict approximately the same
-empty site, their normalized direction imbalance must be below 0.65, and their
-predictions must include nonparallel directions. Predictions within 55% of the
-normal connection length are merged as one physical missing-node candidate.
-The local skeleton must be absent, while segmentation and normalized raw-CT
-support must each remain below 5%. Adjacent accepted missing nodes receive a
-shared cluster ID.
-
-A missing strut requires two present TIFF junctions, a locally expected
-connection direction, no observed graph edge, less than 20% material coverage,
-and a continuous unsupported run covering at least 80% of the connection.
-Connections touching a missing junction are not automatically counted as
-missing struts.
-
-The JSON is read only for the expected numbers of junction and strut records.
-Its positions, indices, and endpoint coordinates are never used. No
-JSON-to-TIFF transform or tilt estimate is calculated.
-
-To reject CT crop artifacts, reliable observed TIFF junctions define a 3D
-convex hull. Broken and missing-strut evidence must remain 1.5 normal observed
-strut lengths inside that hull. Missing-junction sites use a smaller margin of
-15% of the normal strut length, together with the balanced three-neighbor
-requirement, so a real node hole near the visible surface can survive while
-outward crop projections are rejected. Boundary candidates are discarded.
-
-The script writes thickness, topology-strut, and missing-junction CSV files.
-Its concise Markdown summary contains only the main strut and defect counts;
-it does not include PNG links, slice tables, JSON-usage notes, or detailed
-diagnostics. All PNGs are stored in the output directory's `png_outputs/`
-subfolder. Combined defect sheets use magenta for missing junctions, yellow
-for missing struts, red for broken fragment pairs, and orange for sustained
-relative thinning. One representative slice is rendered per continuous event
-and its complete Z range is printed in the panel label.
-
+The reported total missing-strut count combines directly detected missing
+connections with 12 junction-implied missing struts for each accepted missing
+junction. The summary shows the formula explicitly. Visualization colors are
+yellow for missing struts, red for potential defects, and magenta for missing
+junctions.
 
 ### `src/mcp_server.py`
 
-**What it does:** Exposes segmentation, slice visualization, and skeletonization
-as FastMCP tools.
+**Purpose:** Expose segmentation, slice visualization, and skeletonization as
+FastMCP tools.
 
-**How it works:** `segment_ct_dataset` applies the global rule
-\(mask = I \ge T\). `visualize_slice` extracts a plane along axis 0, 1, or 2 and
-linearly maps its finite minimum and maximum to the display range. `skeletonize`
-delegates to `src/skeletonization.py`. This script is an integration layer, not
-a separate analysis algorithm.
+**Method:**
+
+- `segment_ct_dataset` applies one user-supplied global threshold. Use it only
+  when a single threshold is appropriate for the complete volume.
+- `visualize_slice` extracts a plane on axis 0, 1, or 2 and min-max scales it
+  for grayscale display.
+- `skeletonize` delegates to the same `skeletonize_mask` implementation in
+  `src/skeletonization.py`.
+
+For scans with brightness drift, prefer `threshold_optimizer.py` over the MCP
+global-threshold segmentation tool.
 
 ### `src/3d_visualize.py`
 
-**What it does:** Creates 3D PNG renderings of NPY volumes, optionally with a
-skeleton overlay.
+**Purpose:** Create optional 3D PNG renderings of NPY volumes, with or without
+a skeleton overlay.
 
-**How it works:** It downsamples the array for speed, min-max normalizes it to
-`0–1`, and uses marching cubes at a chosen threshold to convert the voxel field
-into a triangle surface mesh. Matplotlib renders that mesh at the requested
-elevation and azimuth. The overlay version plots nonzero skeleton coordinates
-as red points on a transparent surface.
+**Method:** The script downsamples and min-max normalizes an NPY array, extracts
+an isosurface with marching cubes, and renders it with Matplotlib. The overlay
+variant plots nonzero NPY skeleton coordinates as red points.
 
+This module currently exposes Python functions rather than a general CLI. Its
+`__main__` block contains demonstration paths, so production workflows should
+import and call `visualize_3d` or `visualize_3d_with_skeleton` with explicit
+paths.
 
-## Choosing between related scripts
+## Retired analysis path
 
-- Use `threshold_optimizer.py` for brightness drift; use the MCP global
-  threshold tool only when one threshold works across the full volume.
-- Use `strut_thickness_analysis.py` for physical diameter accuracy and
-  `strut_density_analysis.py` for combined material-presence evidence.
-- Use `anomaly_identifier.py` for detailed graph and raw-CT verification;
-  use `missing_strut_identifier.py` for a faster endpoint check.
-- Use `evaluation_of_segmentations.py` for 2D image scoring, not physical
-  measurements of the complete 3D volume.
+The deleted `strut_thickness_analysis.py`, `anomaly_identifier.py`, and
+`missing_strut_identifier.py` scripts are no longer runnable project
+components. The deleted density and strut-thickness agent definitions are also
+not part of the current workflow. Missing-topology analysis is now handled by
+`missing_strut_junction_analyzer.py`; the overview therefore does not direct
+users to the retired thickness, density, anomaly, or endpoint-only workflows.

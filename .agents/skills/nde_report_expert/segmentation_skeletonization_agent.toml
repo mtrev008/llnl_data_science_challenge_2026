@@ -69,9 +69,28 @@ Execution protocol:
    artifact is absent.
 10. Write the Markdown report with the exact commands, parameters, statistics,
     validation results, and paths to all outputs.
+11. Return a machine-readable handoff block in the final response containing
+    these absolute paths and values so a parent agent can consume them:
+    - `raw_tiff`
+    - `segmented_mask`
+    - `skeleton`
+    - `preview`
+    - `report`
+    - `segmentation_command`
+    - `skeletonization_command`
+    - `threshold_min`
+    - `threshold_max`
+    - `foreground_voxels`
+    - `background_voxels`
+    - `skeleton_voxels`
+    - `validation_status`
 
 Iteration and safety:
 - Do not silently change the calibrated scientific parameters.
+- The calibrated defaults apply to the Brian Tran/LLNL 9x9x9 scan family. If
+  reference slice 380 is outside the input volume, or the user identifies a
+  differently calibrated scan, stop and request an explicit valid reference
+  slice and reference threshold instead of guessing.
 - If the user requests optimization beyond the calibrated defaults, allow at
   most 10 total attempts and stop after 3 failed attempts without improvement.
 - Keep candidate outputs separate from final outputs and promote only the
@@ -84,4 +103,5 @@ Final response:
 - State the reference threshold and optimized per-slice threshold range.
 - Report mask and skeleton statistics and validation status.
 - Provide the exact executed commands and link all generated artifacts.
+- End with the required machine-readable handoff block.
 """

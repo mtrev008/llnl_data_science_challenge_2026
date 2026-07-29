@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure struts from existing segmented and skeletonized 3D TIFF stacks."""
+"""Detect missing TIFF-derived struts and junctions across the full 3D scan."""
 
 from __future__ import annotations
 
@@ -26,22 +26,35 @@ EDT_SLAB_DEPTH = 48
 EDT_HALO = 16
 RELATIVE_THIN_RATIO = 0.60
 MIN_SUSTAINED_THIN_SAMPLES = 2
-MIN_MISSING_JUNCTION_SUPPORT = 2
+MIN_MISSING_JUNCTION_SUPPORT = 3
 JUNCTION_PREDICTION_POSITION_TOLERANCE = 0.25
 PREDICTION_POSITION_TOLERANCE = 0.35
 PREDICTION_MERGE_TOLERANCE = 0.60
 TEMPLATE_ANGLE_TOLERANCE_DEGREES = 15.0
 TEMPLATE_MIN_LENGTH_RATIO = 0.75
 TEMPLATE_MAX_LENGTH_RATIO = 1.30
-ENDPOINT_ANGLE_TOLERANCE_DEGREES = 40.0
+ENDPOINT_ANGLE_TOLERANCE_DEGREES = 45.0
 POTENTIALLY_BROKEN_MISSING_FRACTION = 0.20
 MISSING_STRUT_MISSING_FRACTION = 0.45
+POTENTIAL_DEFECT_UNSUPPORTED_RUN_FRACTION = 0.10
 LOCAL_MATERIAL_SUPPORT_FRACTION = 0.02
+RAW_MATERIAL_SUPPORT_FRACTION = 0.02
 MAX_TRACK_GAP_SLICES = 2
 CONSISTENT_STRUCTURE_SAMPLES = 3
 JUNCTION_MAX_BOUNDARY_EXTENSION_SCALE = 0.30
-EDGE_EXCLUSION_VOXELS = 2.0
+LOCAL_LENGTH_MIN_SAMPLES = 5
+LOCAL_LENGTH_SEARCH_RADIUS_SCALE = 2.0
+MIN_MERGED_JUNCTION_SUPPORT = 6
+MISSING_STRUTS_PER_MISSING_JUNCTION = 12
 STRUT_ENDPOINT_TRIM_FRACTION = 0.05
+VISUALIZATION_STYLES = {
+    "missing junction": ("magenta", 300),
+    "missing strut": ("yellow", 260),
+    "potential defect": ("red", 260),
+    "potentially broken strut": ("orange", 240),
+    "broken fragment": ("red", 260),
+    "sustained thin": ("orange", 220),
+}
 NEIGHBORS = [
     (z, y, x)
     for z in (-1, 0, 1)
@@ -96,7 +109,10 @@ def percentile_argument(value: str) -> float:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Measure every strut in an existing 3D mask and skeleton."
+        description=(
+            "Exhaustively detect missing struts and junctions using geometry "
+            "learned from the observed TIFF skeleton."
+        )
     )
     parser.add_argument("segmented_tiff", type=Path)
     parser.add_argument("--skeleton-tiff", type=Path)
@@ -105,23 +121,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--expected-json",
         "--registered-json",
         type=Path,
-        help="Perfect-design JSON used only for expected junction/strut counts",
+        help=(
+            "Perfect-design JSON used only for coordinate-free counts, degree "
+            "distribution, and structural-family priors"
+        ),
     )
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--voxel-size-um", type=float, default=VOXEL_SIZE_UM)
-    parser.add_argument(
-        "--voxel-spacing-um",
-        type=float,
-        nargs=3,
-        metavar=("Z", "Y", "X"),
-        help="Anisotropic Z/Y/X spacing; overrides --voxel-size-um",
-    )
-    parser.add_argument(
-        "--strut-thickness-percentile",
-        type=percentile_argument,
-        default=10.0,
-        help="Within-strut percentile used to represent low thickness (default: 10)",
-    )
     parser.add_argument(
         "--max-track-gap-slices",
         type=int,
@@ -145,18 +150,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=MISSING_STRUT_MISSING_FRACTION,
     )
     parser.add_argument(
-        "--include-thickness-potentially-broken",
-        action="store_true",
-        # Thickness-only warnings are intentionally paused by default. Keep this
-        # switch so the preserved detector can be re-enabled without code edits.
-        help="Re-enable thickness-derived potentially-broken classifications",
+        "--potential-defect-unsupported-run-fraction",
+        type=float,
+        default=POTENTIAL_DEFECT_UNSUPPORTED_RUN_FRACTION,
     )
     parser.add_argument(
-        "--include-topology-potentially-broken",
-        action="store_true",
-        # Topology-only warnings are intentionally paused by default. The
-        # implementation remains available for a later review pass.
-        help="Re-enable topology-derived potentially-broken classifications",
+        "--local-length-min-samples",
+        type=int,
+        default=LOCAL_LENGTH_MIN_SAMPLES,
     )
     return parser
 
@@ -861,7 +862,7 @@ def _canonical_vector(vector):
     return vector
 
 
-def _learn_connection_templates(paths):
+def _learn_connection_templates(paths, diagnostics=None):
     """Learn normal connection vectors from intact TIFF skeleton paths."""
     vectors = []
     for path in paths:
@@ -872,15 +873,22 @@ def _learn_connection_templates(paths):
             vector = _canonical_vector(path["points"][-1] - path["points"][0])
             if np.linalg.norm(vector) > 0:
                 vectors.append(vector)
+    if diagnostics is not None:
+        diagnostics["template_paths_started"] += len(vectors)
     if not vectors:
         return []
     lengths = np.asarray([np.linalg.norm(vector) for vector in vectors])
     center = float(np.median(lengths))
-    vectors = [
+    length_selected = [
         vector
         for vector in vectors
         if 0.60 * center <= np.linalg.norm(vector) <= 1.40 * center
     ]
+    if diagnostics is not None:
+        diagnostics["template_length_rejected"] += (
+            len(vectors) - len(length_selected)
+        )
+    vectors = length_selected
     clusters = []
     cosine_limit = math.cos(math.radians(TEMPLATE_ANGLE_TOLERANCE_DEGREES))
     for vector in sorted(vectors, key=lambda value: tuple(value)):
@@ -902,11 +910,113 @@ def _learn_connection_templates(paths):
         if not assigned:
             clusters.append([vector])
     minimum_support = max(5, int(0.001 * len(vectors)))
+    supported_clusters = [
+        cluster for cluster in clusters if len(cluster) >= minimum_support
+    ]
+    if diagnostics is not None:
+        diagnostics["template_family_rejected"] += sum(
+            len(cluster)
+            for cluster in clusters
+            if len(cluster) < minimum_support
+        )
+        diagnostics["template_vectors_retained"] += sum(
+            len(cluster) for cluster in supported_clusters
+        )
+        diagnostics["template_families_retained"] += len(supported_clusters)
     return [
         np.median(cluster, axis=0)
-        for cluster in clusters
-        if len(cluster) >= minimum_support
+        for cluster in supported_clusters
     ]
+
+
+def _robust_length_inliers(lengths):
+    """Return a robust inlier mask for positive observed TIFF strut lengths."""
+    lengths = np.asarray(lengths, dtype=float)
+    if not len(lengths):
+        return np.zeros(0, dtype=bool)
+    center = float(np.median(lengths))
+    mad = float(np.median(np.abs(lengths - center)))
+    if mad > 1e-9:
+        return np.abs(lengths - center) <= 3.0 * 1.4826 * mad
+    return (lengths >= 0.60 * center) & (lengths <= 1.40 * center)
+
+
+def build_local_length_model(paths, minimum_samples=LOCAL_LENGTH_MIN_SAMPLES):
+    """Index robust intact TIFF struts for layer-aware local length estimates."""
+    records = []
+    for path in paths:
+        if (
+            path["start_type"] == path["end_type"] == "junction"
+            and path["path_length_voxels"] >= MIN_BRANCH_LENGTH
+        ):
+            start = np.asarray(path["points"][0], dtype=float)
+            end = np.asarray(path["points"][-1], dtype=float)
+            length = float(np.linalg.norm(end - start))
+            if length > 0:
+                records.append((0.5 * (start + end), end - start, length))
+    if not records:
+        return {
+            "midpoints": np.empty((0, 3), dtype=float),
+            "lengths": np.empty(0, dtype=float),
+            "layers": np.empty(0, dtype=int),
+            "global_median": 1.0,
+            "layer_spacing": 1.0,
+            "layer_origin": 0.0,
+            "minimum_samples": int(minimum_samples),
+        }
+    midpoints = np.asarray([record[0] for record in records], dtype=float)
+    vectors = np.asarray([record[1] for record in records], dtype=float)
+    lengths = np.asarray([record[2] for record in records], dtype=float)
+    selected = _robust_length_inliers(lengths)
+    midpoints, vectors, lengths = (
+        midpoints[selected],
+        vectors[selected],
+        lengths[selected],
+    )
+    global_median = float(np.median(lengths))
+    z_spans = np.abs(vectors[:, 0])
+    z_spans = z_spans[z_spans >= 2.0]
+    layer_spacing = (
+        float(np.median(z_spans)) if len(z_spans) else global_median
+    )
+    layer_origin = float(np.min(midpoints[:, 0]))
+    layers = np.rint((midpoints[:, 0] - layer_origin) / layer_spacing).astype(int)
+    return {
+        "midpoints": midpoints,
+        "lengths": lengths,
+        "layers": layers,
+        "global_median": global_median,
+        "layer_spacing": layer_spacing,
+        "layer_origin": layer_origin,
+        "minimum_samples": int(minimum_samples),
+    }
+
+
+def local_median_strut_length(point, model):
+    """Estimate local length from a 3D layer/region, with robust global fallback."""
+    point = np.asarray(point, dtype=float)
+    lengths = model["lengths"]
+    minimum = int(model["minimum_samples"])
+    if not len(lengths):
+        return float(model["global_median"]), "global_fallback", 0
+    radius = LOCAL_LENGTH_SEARCH_RADIUS_SCALE * float(model["global_median"])
+    distances = np.linalg.norm(model["midpoints"] - point, axis=1)
+    layer = int(
+        round((point[0] - model["layer_origin"]) / model["layer_spacing"])
+    )
+    same_layer = (model["layers"] == layer) & (distances <= radius)
+    nearby = distances <= radius
+    for selected, source in (
+        (same_layer, "same_layer"),
+        (nearby, "nearby_3d"),
+    ):
+        local = lengths[selected]
+        if len(local) < minimum:
+            continue
+        local = local[_robust_length_inliers(local)]
+        if len(local) >= minimum:
+            return float(np.median(local)), source, int(len(local))
+    return float(model["global_median"]), "global_fallback", int(np.sum(nearby))
 
 
 def _material_support_at(point, mask, skeleton, raw, lows, scales, raw_cutoff, radius):
@@ -951,6 +1061,24 @@ def classify_topology_strut(
         return "missing"
     if absent_fraction + epsilon >= potentially_broken_fraction:
         return "potentially_broken"
+    return "likely_present"
+
+
+def classify_missing_strut_candidate(
+    material_coverage,
+    unsupported_run_fraction,
+    missing_fraction=MISSING_STRUT_MISSING_FRACTION,
+    potential_defect_run_fraction=POTENTIAL_DEFECT_UNSUPPORTED_RUN_FRACTION,
+):
+    """Classify missing by total coverage, then flag a potential defect."""
+    epsilon = 1e-12
+    if 1.0 - float(material_coverage) + epsilon >= missing_fraction:
+        return "missing"
+    if (
+        float(unsupported_run_fraction) + epsilon
+        >= potential_defect_run_fraction
+    ):
+        return "potential_defect"
     return "likely_present"
 
 
@@ -1007,6 +1135,23 @@ def points_in_scan_interior(
     return distances >= required_margin
 
 
+def scan_boundary_distances(points, model, shape):
+    """Return signed distance to the nearest hull or rectangular scan boundary."""
+    points = np.atleast_2d(np.asarray(points, dtype=float))
+    shape = np.asarray(shape, dtype=float)
+    rectangular = np.min(
+        np.column_stack((points, (shape - 1.0)[None, :] - points)),
+        axis=1,
+    )
+    if model is None:
+        return rectangular
+    signed = (
+        points @ model["normals"].T + model["offsets"]
+    ) / model["normal_lengths"]
+    hull = -np.max(signed, axis=1)
+    return np.minimum(rectangular, hull)
+
+
 def exclude_boundary_defects(rows, interior_model):
     """Remove defect labels whose evidence touches the cropped lattice boundary."""
     for row in rows:
@@ -1023,7 +1168,7 @@ def exclude_boundary_defects(rows, interior_model):
             points_in_scan_interior(
                 evidence_points,
                 interior_model,
-                margin_voxels=EDGE_EXCLUSION_VOXELS,
+                margin_voxels=0.0,
             )
         ):
             row["classification"] = "normal"
@@ -1203,7 +1348,10 @@ def infer_tiff_topology_defects(
     prediction_position_tolerance=PREDICTION_POSITION_TOLERANCE,
     potentially_broken_fraction=POTENTIALLY_BROKEN_MISSING_FRACTION,
     missing_fraction=MISSING_STRUT_MISSING_FRACTION,
+    potential_defect_run_fraction=POTENTIAL_DEFECT_UNSUPPORTED_RUN_FRACTION,
     expected_structure=None,
+    diagnostics=None,
+    local_length_min_samples=LOCAL_LENGTH_MIN_SAMPLES,
 ):
     """Infer missing TIFF nodes/connections without using design coordinates."""
     node_samples = defaultdict(list)
@@ -1231,19 +1379,11 @@ def infer_tiff_topology_defects(
         return [], []
     node_index = {node: index for index, node in enumerate(node_ids)}
     tree = cKDTree(node_points)
-    templates = _learn_connection_templates(paths)
+    templates = _learn_connection_templates(paths, diagnostics)
     if not templates:
         return [], []
-    edge_length = float(np.median([np.linalg.norm(value) for value in templates]))
-    # Junction inference intentionally uses the original, more conservative
-    # proposal tolerance. Strut inference retains the newer recall setting.
-    junction_match_tolerance = max(
-        3.0, JUNCTION_PREDICTION_POSITION_TOLERANCE * edge_length
-    )
-    strut_match_tolerance = max(
-        3.0, prediction_position_tolerance * edge_length
-    )
-    boundary_margin = EDGE_EXCLUSION_VOXELS
+    length_model = build_local_length_model(paths, local_length_min_samples)
+    edge_length = float(length_model["global_median"])
     expected_degrees = set(
         (expected_structure or {}).get("degree_histogram", {})
     )
@@ -1251,18 +1391,29 @@ def infer_tiff_topology_defects(
     proposals = []
     shape = np.asarray(mask.shape, dtype=float)
     for node, point in zip(node_ids, node_points):
+        local_length, length_source, length_samples = local_median_strut_length(
+            point, length_model
+        )
+        junction_match_tolerance = max(
+            3.0, JUNCTION_PREDICTION_POSITION_TOLERANCE * local_length
+        )
         for template in templates:
+            template = (
+                np.asarray(template, dtype=float)
+                / np.linalg.norm(template)
+                * local_length
+            )
             for direction in (-1.0, 1.0):
                 expected = point + direction * template
                 if (
-                    expected[0] < max(valid_range[0], boundary_margin)
-                    or expected[0] > min(valid_range[1], shape[0] - boundary_margin)
-                    or np.any(expected[1:] < boundary_margin)
-                    or np.any(expected[1:] > shape[1:] - boundary_margin)
+                    expected[0] < valid_range[0]
+                    or expected[0] > valid_range[1]
+                    or np.any(expected[1:] < 0.0)
+                    or np.any(expected[1:] > shape[1:] - 1.0)
                     or not points_in_scan_interior(
                         expected,
                         interior_model,
-                        margin_voxels=EDGE_EXCLUSION_VOXELS,
+                        margin_voxels=0.0,
                     )[0]
                 ):
                     continue
@@ -1273,14 +1424,25 @@ def infer_tiff_topology_defects(
                             "point": expected,
                             "source": node,
                             "vector": direction * template,
+                            "local_length": local_length,
+                            "local_length_source": length_source,
+                            "local_length_samples": length_samples,
+                            "match_tolerance": junction_match_tolerance,
                         }
                     )
 
     proposal_clusters = []
     cluster_buckets = defaultdict(list)
+    clustering_bucket_size = max(
+        [proposal["match_tolerance"] for proposal in proposals],
+        default=max(
+            3.0,
+            JUNCTION_PREDICTION_POSITION_TOLERANCE * edge_length,
+        ),
+    )
     for proposal in proposals:
         bucket = tuple(
-            np.floor(proposal["point"] / junction_match_tolerance).astype(int)
+            np.floor(proposal["point"] / clustering_bucket_size).astype(int)
         )
         candidates = [
             index
@@ -1296,14 +1458,25 @@ def infer_tiff_topology_defects(
                 if np.linalg.norm(
                     proposal["point"] - proposal_clusters[index]["center"]
                 )
-                <= junction_match_tolerance
+                <= max(
+                    3.0,
+                    JUNCTION_PREDICTION_POSITION_TOLERANCE
+                    * min(
+                        proposal["local_length"],
+                        proposal_clusters[index]["local_length"],
+                    ),
+                )
             ),
             None,
         )
         if selected is None:
             selected = len(proposal_clusters)
             proposal_clusters.append(
-                {"center": proposal["point"].copy(), "items": [proposal]}
+                {
+                    "center": proposal["point"].copy(),
+                    "items": [proposal],
+                    "local_length": proposal["local_length"],
+                }
             )
             cluster_buckets[bucket].append(selected)
         else:
@@ -1312,9 +1485,11 @@ def infer_tiff_topology_defects(
             cluster["center"] = np.mean(
                 [item["point"] for item in cluster["items"]], axis=0
             )
+            cluster["local_length"] = float(
+                np.median([item["local_length"] for item in cluster["items"]])
+            )
 
     missing_junctions = []
-    node_radius = max(2, int(round(0.08 * edge_length)))
     for cluster in proposal_clusters:
         sources = {item["source"] for item in cluster["items"]}
         if len(sources) < MIN_MISSING_JUNCTION_SUPPORT:
@@ -1335,6 +1510,8 @@ def infer_tiff_topology_defects(
         )
         if direction_imbalance >= 0.65:
             continue
+        local_length = float(cluster["local_length"])
+        node_radius = max(2, int(round(0.08 * local_length)))
         mask_fraction, skeleton_present, raw_fraction = _material_support_at(
             cluster["center"],
             mask,
@@ -1355,6 +1532,14 @@ def infer_tiff_topology_defects(
                 "y": int(round(cluster["center"][1])),
                 "x": int(round(cluster["center"][2])),
                 "proposal_votes": len(sources),
+                "_sources": sources,
+                "local_median_length_voxels": local_length,
+                "local_length_source": Counter(
+                    item["local_length_source"] for item in cluster["items"]
+                ).most_common(1)[0][0],
+                "local_length_sample_count": max(
+                    item["local_length_samples"] for item in cluster["items"]
+                ),
                 "mask_support": mask_fraction,
                 "raw_support": raw_fraction,
                 "cluster_id": -1,
@@ -1368,21 +1553,45 @@ def infer_tiff_topology_defects(
 
     # Merge nearby consensus centers that describe the same absent physical node.
     if missing_junctions:
+        points = np.asarray([item["point"] for item in missing_junctions])
+        local_lengths = np.asarray(
+            [item["local_median_length_voxels"] for item in missing_junctions]
+        )
         candidate_tree = cKDTree(
-            np.asarray([item["point"] for item in missing_junctions])
+            points
         )
         merged = []
-        consumed = set()
+        visited = set()
         for start in range(len(missing_junctions)):
-            if start in consumed:
+            if start in visited:
                 continue
-            component = set(candidate_tree.query_ball_point(
-                missing_junctions[start]["point"],
-                PREDICTION_MERGE_TOLERANCE * edge_length,
-            ))
-            consumed.update(component)
+            component = set()
+            stack = [start]
+            visited.add(start)
+            while stack:
+                current = stack.pop()
+                component.add(current)
+                for neighbor in candidate_tree.query_ball_point(
+                    points[current],
+                    PREDICTION_MERGE_TOLERANCE * float(np.max(local_lengths)),
+                ):
+                    if neighbor in visited:
+                        continue
+                    separation = float(
+                        np.linalg.norm(points[current] - points[neighbor])
+                    )
+                    merge_radius = (
+                        PREDICTION_MERGE_TOLERANCE
+                        * min(local_lengths[current], local_lengths[neighbor])
+                    )
+                    if separation <= merge_radius:
+                        visited.add(neighbor)
+                        stack.append(neighbor)
             members = [missing_junctions[index] for index in sorted(component)]
-            weights = np.asarray([item["proposal_votes"] for item in members])
+            sources = set().union(*(item["_sources"] for item in members))
+            if len(sources) < MIN_MERGED_JUNCTION_SUPPORT:
+                continue
+            weights = np.asarray([len(item["_sources"]) for item in members])
             point = np.average(
                 np.asarray([item["point"] for item in members]),
                 axis=0,
@@ -1395,7 +1604,23 @@ def infer_tiff_topology_defects(
                     "z": int(round(point[0])),
                     "y": int(round(point[1])),
                     "x": int(round(point[2])),
-                    "proposal_votes": int(np.sum(weights)),
+                    "proposal_votes": len(sources),
+                    "_sources": sources,
+                    "local_median_length_voxels": float(
+                        np.average(
+                            [
+                                item["local_median_length_voxels"]
+                                for item in members
+                            ],
+                            weights=weights,
+                        )
+                    ),
+                    "local_length_source": Counter(
+                        item["local_length_source"] for item in members
+                    ).most_common(1)[0][0],
+                    "local_length_sample_count": max(
+                        item["local_length_sample_count"] for item in members
+                    ),
                     "mask_support": float(
                         np.average(
                             [item["mask_support"] for item in members],
@@ -1439,6 +1664,8 @@ def infer_tiff_topology_defects(
         )
         junction["z"] = evidence_slices[len(evidence_slices) // 2]
         junction["junction_id"] = len(persistent_junctions)
+        local_length = junction["local_median_length_voxels"]
+        node_radius = max(2, int(round(0.08 * local_length)))
         expand_junction_boundary(
             junction,
             mask,
@@ -1448,7 +1675,7 @@ def infer_tiff_topology_defects(
             scales,
             raw_cutoff,
             valid_range,
-            edge_length,
+            local_length,
             node_radius,
         )
         persistent_junctions.append(junction)
@@ -1471,13 +1698,27 @@ def infer_tiff_topology_defects(
             current = stack.pop()
             component.append(current)
             for neighbor in missing_tree.query_ball_point(
-                missing_junctions[current]["point"], 1.35 * edge_length
+                missing_junctions[current]["point"],
+                1.35
+                * max(
+                    missing_junctions[current]["local_median_length_voxels"],
+                    edge_length,
+                ),
             ):
                 separation = np.linalg.norm(
                     missing_junctions[current]["point"]
                     - missing_junctions[neighbor]["point"]
                 )
-                if neighbor not in visited and separation >= 0.65 * edge_length:
+                local_pair_length = min(
+                    missing_junctions[current]["local_median_length_voxels"],
+                    missing_junctions[neighbor]["local_median_length_voxels"],
+                )
+                if (
+                    neighbor not in visited
+                    and 0.65 * local_pair_length
+                    <= separation
+                    <= 1.35 * local_pair_length
+                ):
                     visited.add(neighbor)
                     stack.append(neighbor)
         for index in component:
@@ -1490,16 +1731,49 @@ def infer_tiff_topology_defects(
     for node, point in zip(node_ids, node_points):
         for template_index, template in enumerate(templates):
             for direction in (-1.0, 1.0):
-                expected = point + direction * template
+                if diagnostics is not None:
+                    diagnostics["template_projections_started"] += 1
+                template_direction = (
+                    np.asarray(template, dtype=float) / np.linalg.norm(template)
+                )
+                source_length, _, _ = local_median_strut_length(
+                    point, length_model
+                )
+                approximate_midpoint = (
+                    point + 0.5 * direction * template_direction * source_length
+                )
+                local_length, length_source, length_samples = (
+                    local_median_strut_length(approximate_midpoint, length_model)
+                )
+                direction_vector = (
+                    direction * template_direction * local_length
+                )
+                expected = point + direction_vector
+                strut_match_tolerance = max(
+                    3.0, prediction_position_tolerance * local_length
+                )
                 distance, target_index = tree.query(expected)
                 if distance > strut_match_tolerance:
+                    if diagnostics is not None:
+                        diagnostics["endpoint_match_rejected"] += 1
                     continue
                 target = node_ids[int(target_index)]
                 pair = tuple(sorted((node, target)))
-                if pair in seen_pairs or pair in adjacency or pair[0] == pair[1]:
+                if pair[0] == pair[1]:
+                    if diagnostics is not None:
+                        diagnostics["self_pair_rejected"] += 1
+                    continue
+                if pair in adjacency:
+                    if diagnostics is not None:
+                        diagnostics["observed_connection_rejected"] += 1
+                    continue
+                if pair in seen_pairs:
+                    if diagnostics is not None:
+                        diagnostics["duplicate_pair_rejected"] += 1
                     continue
                 seen_pairs.add(pair)
-                direction_vector = direction * template
+                if diagnostics is not None:
+                    diagnostics["unique_candidate_pairs"] += 1
                 minimum_endpoint_cosine = math.cos(
                     math.radians(ENDPOINT_ANGLE_TOLERANCE_DEGREES)
                 )
@@ -1526,6 +1800,8 @@ def infer_tiff_topology_defects(
                 if not (
                     first_has_collinear_support and second_has_collinear_support
                 ):
+                    if diagnostics is not None:
+                        diagnostics["direction_tolerance_rejected"] += 1
                     continue
                 second = node_points[node_index[target]]
                 count = max(3, int(np.ceil(np.linalg.norm(second - point))) + 1)
@@ -1534,13 +1810,19 @@ def infer_tiff_topology_defects(
                 line = full_line[
                     trim : max(trim + 1, count - trim)
                 ]
+                if not len(line):
+                    if diagnostics is not None:
+                        diagnostics["insufficient_samples_rejected"] += 1
+                    continue
                 if not np.all(
                     points_in_scan_interior(
                         line,
                         interior_model,
-                        margin_voxels=EDGE_EXCLUSION_VOXELS,
+                        margin_voxels=0.0,
                     )
                 ):
+                    if diagnostics is not None:
+                        diagnostics["outside_valid_volume_rejected"] += 1
                     continue
                 supported = []
                 for sample in line:
@@ -1550,16 +1832,25 @@ def infer_tiff_topology_defects(
                     supported.append(
                         skeleton_present
                         or mask_fraction >= LOCAL_MATERIAL_SUPPORT_FRACTION
-                        or raw_fraction >= LOCAL_MATERIAL_SUPPORT_FRACTION
+                        or raw_fraction >= RAW_MATERIAL_SUPPORT_FRACTION
                     )
                 coverage = float(np.mean(supported)) if supported else 1.0
                 unsupported_fraction = _longest_false_fraction(supported)
                 anomaly_indices = expanded_absence_indices(supported)
-                classification = classify_topology_strut(
+                classification = classify_missing_strut_candidate(
                     coverage,
-                    potentially_broken_fraction,
+                    unsupported_fraction,
                     missing_fraction,
+                    potential_defect_run_fraction,
                 )
+                if diagnostics is not None:
+                    diagnostics["material_evaluated"] += 1
+                    if classification == "missing":
+                        diagnostics["coverage_classified_missing"] += 1
+                    elif classification == "potential_defect":
+                        diagnostics["continuous_gap_classified_potential_defect"] += 1
+                    else:
+                        diagnostics["coverage_classified_present"] += 1
                 if classification != "likely_present":
                     endpoint_degree_score = float(
                         np.mean(
@@ -1583,6 +1874,9 @@ def infer_tiff_topology_defects(
                             "unsupported_run_fraction": unsupported_fraction,
                             "classification": classification,
                             "structural_family": template_index,
+                            "local_median_length_voxels": local_length,
+                            "local_length_source": length_source,
+                            "local_length_sample_count": length_samples,
                             "sample_points": np.asarray(line, dtype=float),
                             "sample_supported": np.asarray(supported, dtype=bool),
                             "anomaly_points": np.asarray(
@@ -1661,6 +1955,8 @@ def track_anomaly_observations(
                     observation["anomaly_type"] != track["anomaly_type"]
                     or observation["structural_family"]
                     != track["structural_family"]
+                    or observation["source_id"]
+                    != track["observations"][0]["source_id"]
                 ):
                     continue
                 distance = float(
@@ -1669,7 +1965,19 @@ def track_anomaly_observations(
                         - predicted[1:]
                     )
                 )
-                gate = position_tolerance * max(1, elapsed)
+                local_gate = min(
+                    float(
+                        observation.get(
+                            "position_tolerance", position_tolerance
+                        )
+                    ),
+                    float(
+                        track["observations"][-1].get(
+                            "position_tolerance", position_tolerance
+                        )
+                    ),
+                )
+                gate = local_gate * max(1, elapsed)
                 if distance <= gate:
                     matches.append(
                         (
@@ -1773,6 +2081,11 @@ def build_topology_tracks(
                     )
                     + 0.2 * min(1.0, junction["proposal_votes"] / 3.0),
                     "source_id": junction["junction_id"],
+                    "position_tolerance": max(
+                        3.0,
+                        position_tolerance_fraction
+                        * junction["local_median_length_voxels"],
+                    ),
                 }
             )
     for strut in topology_struts:
@@ -1781,11 +2094,11 @@ def build_topology_tracks(
             if strut["classification"] == "missing"
             else strut["anomaly_points"]
         )
-        anomaly_type = (
-            "missing_strut"
-            if strut["classification"] == "missing"
-            else "potentially_broken_strut"
-        )
+        anomaly_type = {
+            "missing": "missing_strut",
+            "broken": "broken_fragment",
+            "potential_defect": "potential_defect_strut",
+        }.get(strut["classification"], "potentially_broken_strut")
         for point in _one_point_per_slice(points):
             observations.append(
                 {
@@ -1796,6 +2109,11 @@ def build_topology_tracks(
                     "confidence": 0.8 * (1.0 - strut["material_coverage"])
                     + 0.2 * strut.get("structural_confidence", 1.0),
                     "source_id": strut["strut_id"],
+                    "position_tolerance": max(
+                        3.0,
+                        position_tolerance_fraction
+                        * strut["local_median_length_voxels"],
+                    ),
                 }
             )
     return track_anomaly_observations(
@@ -2173,12 +2491,28 @@ def write_missing_junction_csv(path, junctions):
         "proposal_votes",
         "mask_support",
         "raw_support",
+        "local_median_length_voxels",
+        "local_length_source",
+        "local_length_sample_count",
+        "evidence_slices",
     )
     with path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         for junction in junctions:
-            writer.writerow({field: junction[field] for field in fields})
+            writer.writerow(
+                {
+                    field: (
+                        ";".join(
+                            str(value)
+                            for value in junction.get("evidence_slices", [])
+                        )
+                        if field == "evidence_slices"
+                        else junction.get(field, "")
+                    )
+                    for field in fields
+                }
+            )
 
 
 def write_topology_strut_csv(path, struts):
@@ -2199,6 +2533,11 @@ def write_topology_strut_csv(path, struts):
         "material_coverage",
         "unsupported_run_fraction",
         "classification",
+        "local_median_length_voxels",
+        "local_length_source",
+        "local_length_sample_count",
+        "endpoint_boundary_distance_voxels",
+        "evidence_slices",
     )
     with path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
@@ -2235,6 +2574,22 @@ def write_topology_strut_csv(path, struts):
                         "unsupported_run_fraction"
                     ],
                     "classification": strut["classification"],
+                    "local_median_length_voxels": strut.get(
+                        "local_median_length_voxels", ""
+                    ),
+                    "local_length_source": strut.get(
+                        "local_length_source", ""
+                    ),
+                    "local_length_sample_count": strut.get(
+                        "local_length_sample_count", ""
+                    ),
+                    "endpoint_boundary_distance_voxels": strut.get(
+                        "endpoint_boundary_distance_voxels", ""
+                    ),
+                    "evidence_slices": ";".join(
+                        str(value)
+                        for value in strut.get("evidence_slices", [])
+                    ),
                 }
             )
 
@@ -2386,7 +2741,7 @@ def plot_validation(
         else "TIFF suspicion candidates; no confirmed break on selected slice"
     )
     figure.suptitle(
-        f"Broken-strut validation around Z={selected_slice}\n{status}",
+        f"Potential-defect validation around Z={selected_slice}\n{status}",
         fontsize=15,
     )
     figure.tight_layout(rect=(0, 0.04, 1, 0.96))
@@ -2475,11 +2830,11 @@ def build_visualization_defects(rows, missing_junctions, topology_struts):
             True,
         )
     for strut in topology_struts:
-        kind = (
-            "missing strut"
-            if strut["classification"] == "missing"
-            else "potentially broken strut"
-        )
+        kind = {
+            "missing": "missing strut",
+            "broken": "broken fragment",
+            "potential_defect": "potential defect",
+        }.get(strut["classification"], "potentially broken strut")
         # A full predicted centerline is a geometric range, not evidence that
         # every intersected slice is anomalous. Plot only locally absent
         # samples so normal material is never circled because of range overlap.
@@ -2491,7 +2846,7 @@ def build_visualization_defects(rows, missing_junctions, topology_struts):
             points,
             strut["z_min"],
             strut["z_max"],
-            strut["classification"] == "missing",
+            strut["classification"] in {"missing", "broken", "potential_defect"},
         )
     return defects
 
@@ -2661,6 +3016,8 @@ def plot_gap_contact_sheets(
     scales,
     visualization_defects=None,
     selected_slices=None,
+    filename_prefix="gap_slices",
+    figure_title="Detected gap slices",
 ):
     """Render TIFF-derived node, strut, fragment, and thinning defects."""
     defects_by_slice = defaultdict(list)
@@ -2712,11 +3069,11 @@ def plot_gap_contact_sheets(
         )
     for strut in topology_missing_struts:
         z, y, x = np.rint(strut["midpoint"]).astype(int)
-        kind = (
-            "missing strut"
-            if strut["classification"] == "missing"
-            else "potentially broken strut"
-        )
+        kind = {
+            "missing": "missing strut",
+            "broken": "broken fragment",
+            "potential_defect": "potential defect",
+        }.get(strut["classification"], "potentially broken strut")
         defects_by_slice[int(z)].append(
             {
                 "kind": kind,
@@ -2765,13 +3122,7 @@ def plot_gap_contact_sheets(
 
     items = sorted(defects_by_slice.items())
     paths = []
-    styles = {
-        "missing junction": ("magenta", 300),
-        "missing strut": ("yellow", 260),
-        "potentially broken strut": ("orange", 240),
-        "broken fragment": ("red", 260),
-        "sustained thin": ("orange", 220),
-    }
+    styles = VISUALIZATION_STYLES
     panels_per_sheet = 12
     for page, offset in enumerate(range(0, len(items), panels_per_sheet), start=1):
         page_items = items[offset : offset + panels_per_sheet]
@@ -2814,8 +3165,9 @@ def plot_gap_contact_sheets(
                 prefix = {
                     "missing junction": "J",
                     "missing strut": "M",
+                    "potential defect": "D",
                     "potentially broken strut": "P",
-                    "broken fragment": "B",
+                    "broken fragment": "F",
                     "sustained thin": "T",
                 }[defect["kind"]]
                 first_z, last_z = defect["slice_range"]
@@ -2862,9 +3214,9 @@ def plot_gap_contact_sheets(
             loc="lower center",
             ncol=max(1, len(legend)),
         )
-        figure.suptitle(f"Detected gap slices — page {page}", fontsize=16)
+        figure.suptitle(f"{figure_title} — page {page}", fontsize=16)
         figure.tight_layout(rect=(0, 0.05, 1, 0.96))
-        path = output_dir / f"gap_slices_{page:02d}.png"
+        path = output_dir / f"{filename_prefix}_{page:02d}.png"
         figure.savefig(path, dpi=180)
         plt.close(figure)
         paths.append(path)
@@ -2988,7 +3340,7 @@ def write_summary(
         f"- Raw-CT material-support cutoff: **{raw_cutoff:.3f}**",
         f"- Segmentation-fade candidates not counted as broken: **{faded}**",
         "",
-        "## Manual broken-strut validation",
+        "## Manual potential-defect validation",
         "",
         f"- Selected slice: **{validation['selected_slice']}**",
         f"- Neighboring range: **{validation['first_slice']}–{validation['last_slice']}**",
@@ -3003,7 +3355,7 @@ def write_summary(
             else "- Status: **no persistent candidate passed; highest-score region shown**"
         ),
         "",
-        "![Raw CT, segmentation, and centerline validation](png_outputs/broken_strut_validation.png)",
+        "![Raw CT, segmentation, and centerline validation](png_outputs/potential_defect_validation.png)",
         "",
         "## Gap slice visualizations",
         "",
@@ -3157,7 +3509,7 @@ def write_concise_summary(
     path.write_text("\n".join(lines))
 
 
-def run_analysis(args):
+def run_legacy_analysis(args):
     skeleton_path = args.skeleton_tiff or args.segmented_tiff.with_name("skeleton.tif")
     mask = tifffile.memmap(args.segmented_tiff)
     skeleton = tifffile.memmap(skeleton_path)
@@ -3177,6 +3529,8 @@ def run_analysis(args):
         raise ValueError("max track gap slices must be non-negative")
     if args.prediction_position_tolerance <= 0:
         raise ValueError("prediction position tolerance must be positive")
+    if args.local_length_min_samples < 1:
+        raise ValueError("local length minimum samples must be positive")
     if not (
         0
         <= args.potentially_broken_missing_fraction
@@ -3267,6 +3621,7 @@ def run_analysis(args):
         args.prediction_position_tolerance,
         args.potentially_broken_missing_fraction,
         args.missing_strut_missing_fraction,
+        args.potential_defect_unsupported_run_fraction,
         expected_structure,
     )
     topology_missing_struts = reportable_topology_struts(
@@ -3417,7 +3772,7 @@ def run_analysis(args):
     summary_path = args.output_dir / "defect_summary.md"
     box_path = png_output_dir / "thickness_box_plot.png"
     cdf_path = png_output_dir / "thickness_cdf.png"
-    validation_path = png_output_dir / "broken_strut_validation.png"
+    validation_path = png_output_dir / "potential_defect_validation.png"
     candidate_path = args.output_dir / "missing_strut_candidates.csv"
     candidate_slice_path = (
         args.output_dir / "missing_strut_candidates_by_slice.csv"
@@ -3476,7 +3831,7 @@ def run_analysis(args):
     for old_path in (
         args.output_dir / "thickness_box_plot.png",
         args.output_dir / "thickness_cdf.png",
-        args.output_dir / "broken_strut_validation.png",
+        args.output_dir / "potential_defect_validation.png",
     ):
         if old_path.exists():
             old_path.unlink()
@@ -3497,6 +3852,548 @@ def run_analysis(args):
     print(f"Saved {topology_strut_path}")
     for path in gap_sheet_paths:
         print(f"Saved {path}")
+
+
+def topology_interior_slice_range(paths, slice_count):
+    """Return the stable observed lattice range without thickness classification."""
+    occupancy = np.zeros(slice_count, dtype=np.int32)
+    for path in paths:
+        if path["path_length_voxels"] < MIN_BRANCH_LENGTH:
+            continue
+        slices = np.rint(np.asarray(path["points"])[:, 0]).astype(int)
+        if not len(slices):
+            continue
+        start = max(0, int(np.min(slices)))
+        stop = min(slice_count - 1, int(np.max(slices)))
+        occupancy[start : stop + 1] += 1
+    relevant = occupancy[occupancy > 0]
+    if not len(relevant):
+        return 0, slice_count - 1
+    stable = np.flatnonzero(occupancy >= 0.70 * np.median(relevant))
+    if not len(stable):
+        occupied = np.flatnonzero(occupancy)
+        return int(occupied[0]), int(occupied[-1])
+    return int(stable[0]), int(stable[-1])
+
+
+def prepare_topology_paths(paths):
+    """Add only the geometric path fields required by topology inference."""
+    prepared = []
+    for path in paths:
+        points = np.asarray(path["points"], dtype=float)
+        steps = np.diff(points, axis=0)
+        prepared.append(
+            {
+                **path,
+                "path_length_voxels": float(
+                    np.linalg.norm(steps, axis=1).sum()
+                ),
+            }
+        )
+    return prepared
+
+
+def attach_track_metadata(missing_junctions, missing_struts, tracks):
+    """Attach merged 3D evidence after all slice observations are collected."""
+    for track in tracks:
+        targets = (
+            missing_junctions
+            if track["anomaly_type"] == "missing_junction"
+            else missing_struts
+        )
+        key = (
+            "junction_id"
+            if track["anomaly_type"] == "missing_junction"
+            else "strut_id"
+        )
+        for target in targets:
+            if target[key] not in track["source_ids"]:
+                continue
+            quality = (track["observed_slice_count"], track["confidence"])
+            if quality <= target.get("_track_quality", (-1, -1.0)):
+                continue
+            target.update(
+                {
+                    "track_id": track["track_id"],
+                    "z_min": track["z_min"],
+                    "z_max": track["z_max"],
+                    "observed_slice_count": track["observed_slice_count"],
+                    "bridged_gap_count": track["bridged_gap_count"],
+                    "confidence": track["confidence"],
+                    "representative_slice": track["representative_slice"],
+                    "evidence_slices": track["observed_slices"],
+                    "_track_quality": quality,
+                }
+            )
+            if track["anomaly_type"] != "missing_junction":
+                target["_visualization_point"] = _trajectory_point_at_slice(
+                    target["full_line"],
+                    track["representative_slice"],
+                )
+            else:
+                point = _trajectory_point_at_slice(
+                    target["proposal_points"],
+                    track["representative_slice"],
+                )
+                target.update(
+                    {
+                        "z": int(track["representative_slice"]),
+                        "y": int(round(point[1])),
+                        "x": int(round(point[2])),
+                    }
+                )
+
+
+def strut_rule_summary_lines(
+    diagnostics,
+    expected_struts,
+    missing_coverage_cutoff,
+):
+    """Format aggregate counters without treating TIFF projections as JSON edges."""
+    value = lambda key: int(diagnostics.get(key, 0))
+    deduplicated = (
+        value("self_pair_rejected") + value("duplicate_pair_rejected")
+    )
+    cutoff_percent = 100.0 * missing_coverage_cutoff
+    expected_text = (
+        str(expected_struts)
+        if expected_struts is not None
+        else "not available"
+    )
+    return [
+        "Strut rule-count summary:",
+        f"  Perfect-design JSON struts (reference only): {expected_text}",
+        (
+            "  TIFF complete paths entering template learning: "
+            f"{value('template_paths_started')}"
+        ),
+        (
+            "  Removed by template global length tolerance: "
+            f"{value('template_length_rejected')}"
+        ),
+        (
+            "  Removed in unsupported angle/length template families: "
+            f"{value('template_family_rejected')}"
+        ),
+        (
+            "  Template vectors retained: "
+            f"{value('template_vectors_retained')}"
+        ),
+        (
+            "  Template families retained: "
+            f"{value('template_families_retained')}"
+        ),
+        (
+            "  TIFF template projections started: "
+            f"{value('template_projections_started')}"
+        ),
+        (
+            "  Removed because endpoints could not be matched: "
+            f"{value('endpoint_match_rejected')}"
+        ),
+        f"  Removed as self-pairs: {value('self_pair_rejected')}",
+        (
+            "  Removed because the connection already exists: "
+            f"{value('observed_connection_rejected')}"
+        ),
+        (
+            "  Removed as duplicate candidate pairs: "
+            f"{value('duplicate_pair_rejected')}"
+        ),
+        f"  Removed during self/deduplication checks: {deduplicated}",
+        f"  Unique candidate pairs: {value('unique_candidate_pairs')}",
+        (
+            "  Removed by direction tolerance: "
+            f"{value('direction_tolerance_rejected')}"
+        ),
+        (
+            "  Removed outside the valid scan volume: "
+            f"{value('outside_valid_volume_rejected')}"
+        ),
+        (
+            "  Removed for insufficient valid samples: "
+            f"{value('insufficient_samples_rejected')} (rule currently inactive)"
+        ),
+        f"  Candidates with material coverage evaluated: {value('material_evaluated')}",
+        (
+            f"  Classified present (coverage > {cutoff_percent:g}%): "
+            f"{value('coverage_classified_present')}"
+        ),
+        (
+            f"  Classified missing (coverage <= {cutoff_percent:g}%): "
+            f"{value('coverage_classified_missing')}"
+        ),
+        (
+            "  Classified potential defect by continuous unsupported run: "
+            f"{value('continuous_gap_classified_potential_defect')}"
+        ),
+        (
+            "  Remaining in final missing-strut output: "
+            f"{value('final_missing_output')}"
+        ),
+        (
+            "  Remaining in final potential-defect output: "
+            f"{value('final_potential_defect_output')}"
+        ),
+    ]
+
+
+def validate_strut_rule_counts(diagnostics):
+    """Fail if instrumentation no longer partitions the existing decisions."""
+    value = lambda key: int(diagnostics.get(key, 0))
+    checks = (
+        (
+            "template paths",
+            value("template_paths_started"),
+            value("template_length_rejected")
+            + value("template_family_rejected")
+            + value("template_vectors_retained"),
+        ),
+        (
+            "template projections",
+            value("template_projections_started"),
+            value("endpoint_match_rejected")
+            + value("self_pair_rejected")
+            + value("observed_connection_rejected")
+            + value("duplicate_pair_rejected")
+            + value("unique_candidate_pairs"),
+        ),
+        (
+            "unique candidate pairs",
+            value("unique_candidate_pairs"),
+            value("direction_tolerance_rejected")
+            + value("outside_valid_volume_rejected")
+            + value("insufficient_samples_rejected")
+            + value("material_evaluated"),
+        ),
+        (
+            "material classifications",
+            value("material_evaluated"),
+            value("coverage_classified_present")
+            + value("coverage_classified_missing")
+            + value("continuous_gap_classified_potential_defect"),
+        ),
+    )
+    for name, started, resolved in checks:
+        if started != resolved:
+            raise ValueError(
+                f"strut rule counters do not reconcile for {name}: "
+                f"{started} started versus {resolved} resolved"
+            )
+    if value("final_missing_output") > value("coverage_classified_missing"):
+        raise ValueError(
+            "final missing output exceeds missing material classifications"
+        )
+    if value("final_potential_defect_output") > value(
+        "continuous_gap_classified_potential_defect"
+    ):
+        raise ValueError(
+            "final potential-defect output exceeds continuous-gap classifications"
+        )
+def write_missing_topology_summary(
+    path,
+    expected_structure,
+    observed_paths,
+    missing_struts,
+    potential_defects,
+    missing_junctions,
+    valid_range,
+    image_paths,
+    max_track_gap_slices,
+    diagnostics,
+    missing_coverage_cutoff,
+):
+    expected_struts = expected_structure["strut_count"]
+    expected_junctions = expected_structure["junction_count"]
+    direct_missing_count = len(missing_struts)
+    junction_implied_count = (
+        MISSING_STRUTS_PER_MISSING_JUNCTION * len(missing_junctions)
+    )
+    combined_missing_count = direct_missing_count + junction_implied_count
+    lines = [
+        "# TIFF-Derived Missing Topology Summary",
+        "",
+        (
+            "- Detection scope: **missing struts, potential "
+            "defects, and missing junctions only**"
+        ),
+        "- JSON coordinate usage: **none**",
+        (
+            "- JSON structural usage: **coordinate-free counts, connectivity "
+            "degrees, and structural-family priors**"
+        ),
+        "- Spatial geometry: **learned from the observed TIFF skeleton**",
+        (
+            f"- Exhaustive slice range: **{valid_range[0]}–{valid_range[1]}**"
+        ),
+        "- Slice selection during detection: **none**",
+        "- Top-k or global-deficit truncation: **none**",
+        (
+            "- Counting: **per physical 3D anomaly after consecutive-slice "
+            "evidence merging**"
+        ),
+        (
+            f"- Maximum bridged tracking gap: **{max_track_gap_slices} slices**"
+        ),
+        f"- Observed skeleton paths evaluated: **{len(observed_paths)}**",
+        (
+            "- Perfect-design strut count: "
+            f"**{expected_struts if expected_struts is not None else 'not available'}**"
+        ),
+        (
+            "- Perfect-design junction count: "
+            f"**{expected_junctions if expected_junctions is not None else 'not available'}**"
+        ),
+        f"- Missing struts: **{combined_missing_count}**",
+        f"- Direct interior missing struts: **{direct_missing_count}**",
+        f"- Junction-implied missing struts: **{junction_implied_count}**",
+        (
+            "- Missing-strut count formula: "
+            f"**{direct_missing_count} direct + "
+            f"{junction_implied_count} junction-implied "
+            f"({MISSING_STRUTS_PER_MISSING_JUNCTION} per missing junction)**"
+        ),
+        f"- Potential defects: **{len(potential_defects)}**",
+        f"- Missing junctions: **{len(missing_junctions)}**",
+        (
+            "- Local length sources: **"
+            + ", ".join(
+                f"{key}={value}"
+                for key, value in sorted(
+                    Counter(
+                        item.get("local_length_source", "unknown")
+                        for item in [
+                            *missing_junctions,
+                            *missing_struts,
+                            *potential_defects,
+                        ]
+                    ).items()
+                )
+            )
+            + "**"
+        ),
+        "",
+        "## Strut Rule Counts",
+        "",
+        "```text",
+        *strut_rule_summary_lines(
+            diagnostics,
+            expected_struts,
+            missing_coverage_cutoff,
+        ),
+        "```",
+        "",
+        (
+            "Representative slices are selected only after detection and 3D "
+            "merging; they do not affect counts."
+        ),
+        "",
+    ]
+    for image_path in image_paths:
+        lines.extend(
+            [
+                f"![Missing topology visualization](png_outputs/{image_path.name})",
+                "",
+            ]
+        )
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def run_analysis(args):
+    """Run only the exhaustive, coordinate-free missing-topology workflow."""
+    skeleton_path = args.skeleton_tiff or args.segmented_tiff.with_name(
+        "skeleton.tif"
+    )
+    mask = tifffile.memmap(args.segmented_tiff)
+    skeleton = tifffile.memmap(skeleton_path)
+    if mask.ndim != 3:
+        raise ValueError("segmented TIFF must be a 3D stack")
+    if mask.shape != skeleton.shape:
+        raise ValueError("segmented mask and skeleton shapes differ")
+    raw = tifffile.memmap(args.raw_tiff) if args.raw_tiff else None
+    if raw is not None and raw.shape != mask.shape:
+        raise ValueError("raw and segmented TIFF shapes differ")
+    if args.max_track_gap_slices < 0:
+        raise ValueError("max track gap slices must be non-negative")
+    if args.prediction_position_tolerance <= 0:
+        raise ValueError("prediction position tolerance must be positive")
+    if args.local_length_min_samples < 1:
+        raise ValueError("local length minimum samples must be positive")
+    if not 0 <= args.potential_defect_unsupported_run_fraction <= 1:
+        raise ValueError(
+            "potential-defect unsupported-run fraction must be between zero and one"
+        )
+    if not (
+        0
+        <= args.potentially_broken_missing_fraction
+        < args.missing_strut_missing_fraction
+        <= 1
+    ):
+        raise ValueError(
+            "missing-fraction thresholds must satisfy "
+            "0 <= potentially broken < missing <= 1"
+        )
+
+    print("Stage 1/4: extracting the observed TIFF skeleton graph...")
+    paths = prepare_topology_paths(extract_paths(skeleton))
+    expected_structure = load_expected_structure(args.expected_json)
+    valid_range = topology_interior_slice_range(paths, mask.shape[0])
+    interior_model = build_scan_interior_model(paths)
+    if raw is not None:
+        lows, scales = raw_normalization(raw)
+        raw_cutoff = raw_material_cutoff(raw, skeleton, lows, scales)
+    else:
+        lows = scales = None
+        raw_cutoff = 0.0
+
+    print(
+        "Stage 2/4: evaluating every inferred topology candidate across "
+        "all intersected slices..."
+    )
+    strut_diagnostics = Counter()
+    missing_junctions, topology_struts = infer_tiff_topology_defects(
+        paths,
+        mask,
+        skeleton,
+        raw,
+        lows,
+        scales,
+        raw_cutoff,
+        valid_range,
+        interior_model,
+        args.prediction_position_tolerance,
+        args.potentially_broken_missing_fraction,
+        args.missing_strut_missing_fraction,
+        args.potential_defect_unsupported_run_fraction,
+        expected_structure,
+        strut_diagnostics,
+        args.local_length_min_samples,
+    )
+    missing_struts = [
+        strut
+        for strut in topology_struts
+        if strut["classification"] == "missing"
+    ]
+    potential_defects = [
+        strut
+        for strut in topology_struts
+        if strut["classification"] == "potential_defect"
+    ]
+    reportable_struts = [
+        *missing_struts,
+        *potential_defects,
+    ]
+
+    print("Stage 3/4: merging slice observations into physical 3D anomalies...")
+    templates = _learn_connection_templates(paths)
+    edge_length = (
+        float(np.median([np.linalg.norm(template) for template in templates]))
+        if templates
+        else 1.0
+    )
+    tracks = build_topology_tracks(
+        missing_junctions,
+        reportable_struts,
+        edge_length,
+        args.prediction_position_tolerance,
+        args.max_track_gap_slices,
+    )
+    attach_track_metadata(missing_junctions, reportable_struts, tracks)
+    strut_diagnostics["final_missing_output"] = len(missing_struts)
+    strut_diagnostics["final_potential_defect_output"] = len(
+        potential_defects
+    )
+    validate_strut_rule_counts(strut_diagnostics)
+
+    visualization_defects = build_visualization_defects(
+        [],
+        missing_junctions,
+        reportable_struts,
+    )
+    nonzero_template_z = [
+        abs(float(template[0]))
+        for template in templates
+        if abs(float(template[0])) >= 2.0
+    ]
+    observed_layer_span = (
+        float(np.median(nonzero_template_z))
+        if nonzero_template_z
+        else 40.0
+    )
+    selected_slices, _ = select_visualization_slices(
+        visualization_defects,
+        observed_layer_span,
+    )
+
+    print("Stage 4/4: writing focused missing-topology outputs...")
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    png_dir = args.output_dir / "png_outputs"
+    png_dir.mkdir(parents=True, exist_ok=True)
+    strut_path = args.output_dir / "missing_struts.csv"
+    potential_defect_path = args.output_dir / "potential_defects.csv"
+    junction_path = args.output_dir / "missing_junctions.csv"
+    summary_path = args.output_dir / "defect_summary.md"
+    write_topology_strut_csv(strut_path, missing_struts)
+    write_topology_strut_csv(potential_defect_path, potential_defects)
+    write_missing_junction_csv(junction_path, missing_junctions)
+    image_paths = plot_gap_contact_sheets(
+        png_dir,
+        [],
+        missing_junctions,
+        reportable_struts,
+        raw,
+        mask,
+        lows,
+        scales,
+        visualization_defects,
+        selected_slices,
+        filename_prefix="missing_anomalies",
+        figure_title=(
+            "Missing struts, potential defects, "
+            "and missing junctions"
+        ),
+    )
+    current_images = {image.name for image in image_paths}
+    for old_path in png_dir.glob("missing_anomalies_*.png"):
+        if old_path.name not in current_images:
+            old_path.unlink()
+    write_missing_topology_summary(
+        summary_path,
+        expected_structure,
+        paths,
+        missing_struts,
+        potential_defects,
+        missing_junctions,
+        valid_range,
+        image_paths,
+        args.max_track_gap_slices,
+        strut_diagnostics,
+        1.0 - args.missing_strut_missing_fraction,
+    )
+    for line in strut_rule_summary_lines(
+        strut_diagnostics,
+        expected_structure["strut_count"],
+        1.0 - args.missing_strut_missing_fraction,
+    ):
+        print(line)
+    junction_implied_missing = (
+        MISSING_STRUTS_PER_MISSING_JUNCTION * len(missing_junctions)
+    )
+    combined_missing = len(missing_struts) + junction_implied_missing
+    print(f"Missing struts: {combined_missing}")
+    print(
+        "Missing-strut count formula: "
+        f"{len(missing_struts)} direct + {junction_implied_missing} "
+        "junction-implied"
+    )
+    print(f"Potential defects: {len(potential_defects)}")
+    print(f"Missing junctions: {len(missing_junctions)}")
+    print(f"Saved {strut_path}")
+    print(f"Saved {potential_defect_path}")
+    print(f"Saved {junction_path}")
+    print(f"Saved {summary_path}")
+    for image_path in image_paths:
+        print(f"Saved {image_path}")
 
 
 def main():
