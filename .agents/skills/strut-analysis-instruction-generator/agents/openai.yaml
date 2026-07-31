@@ -1,0 +1,6 @@
+interface:
+  display_name: "Strut Stack Instructions"
+  short_description: "Create measurable CT stack review instructions"
+  default_prompt: "Use $strut-analysis-instruction-generator to create the Agent 1 contract for these registered CT strut stacks."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Strut Detector Code"
+  short_description: "Implement and validate stackwise strut measurements"
+  default_prompt: "Use $strut-detector-code-generator to validate and repair this stackwise registered-strut detector."
+policy:
+  allow_implicit_invocation: true

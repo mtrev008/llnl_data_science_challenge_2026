@@ -1,0 +1,1 @@
+Only grayscale CT slices are permitted.

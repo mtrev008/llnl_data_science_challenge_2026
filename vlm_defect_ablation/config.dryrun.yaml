@@ -1,0 +1,19 @@
+data:
+  tiff_path: ../data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif
+  segmentation_path: ../data/missing_struts/analysis/segmented_mask.tif
+  geometry_json_path: ../data/missing_struts/registered_jsons/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.json
+  paper_path: null
+  output_dir: /tmp/vlm_defect_ablation_dryrun
+volume:
+  expected_slice_count: 761
+  voxel_spacing: {x: null, y: null, z: null}
+stacks: {size: 7, stride: 1, random_seed: 42, contact_sheet_max_dimension: 1024}
+geometry: {registered_to_tiff: false}
+paper: {pages: [], keywords: [], maximum_excerpt_characters: 12000}
+experiment:
+  conditions: [images_only, images_segmentation, images_geometry, images_segmentation_geometry, images_paper, full_context]
+  repeats: 1
+  continue_on_error: true
+  reference_mode: per_stack
+vlm: {provider: mock, model: mock-vlm, temperature: 0.2, max_tokens: 6000, timeout_seconds: 180}
+execution: {timeout_seconds: 20, allow_network: false, allow_package_installation: false, allow_shell_commands: false}

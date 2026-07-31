@@ -1,0 +1,46 @@
+data:
+  tiff_path: path/to/scan.tif
+  segmentation_path: null
+  geometry_json_path: null
+  paper_path: null
+  output_dir: outputs
+volume:
+  expected_slice_count: 761
+  voxel_spacing: {x: null, y: null, z: null}
+stacks:
+  size: 7
+  stride: 1
+  center_slices: []
+  center_range: []
+  random_count: null
+  random_seed: 42
+  preserve_full_resolution: true
+  contact_sheet_max_dimension: 2048
+geometry:
+  registered_to_tiff: false
+  transform_path: null
+segmentation:
+  on_the_fly: false
+  method: percentile
+paper:
+  pages: []
+  keywords: []
+  maximum_excerpt_characters: 12000
+  continue_without_paper: false
+experiment:
+  conditions: [images_only, images_segmentation, images_geometry, images_segmentation_geometry, images_paper, full_context]
+  repeats: 1
+  force: false
+  continue_on_error: true
+  reference_mode: per_stack
+vlm:
+  provider: mock # use huggingface with HF_TOKEN for live requests
+  model: mock-vlm
+  temperature: 0.2
+  max_tokens: 6000
+  timeout_seconds: 180
+execution:
+  timeout_seconds: 120
+  allow_network: false
+  allow_package_installation: false
+  allow_shell_commands: false

@@ -1,0 +1,1 @@
+Grayscale CT slices and the supplied local paper excerpt are permitted; geometry and segmentation are prohibited.

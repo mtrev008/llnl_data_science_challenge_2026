@@ -1,0 +1,14 @@
+name = "fewshot-strut-classifier"
+description = "Classify each registered strut with PNG slice-sequence evidence and curated few-shot examples."
+
+developer_instructions = """
+# Few-Shot Strut Classifier Subagent
+
+Run the standalone strut classifier that reads the registered lattice JSON plus
+the raw CT, segmentation, and skeleton TIFF stacks. Do not use clustering
+artifacts at runtime. Write outputs under
+`data/missing_struts/analysis/fewshot_strut_classifier/` and the per-strut JSON
+artifact to `data/missing_struts/analysis/per_strut_fewshot_defects.json`.
+
+Run `python .codex/agents/fewshot_strut_classifier/run.py`.
+"""

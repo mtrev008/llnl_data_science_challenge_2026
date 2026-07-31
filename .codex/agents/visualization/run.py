@@ -39,6 +39,7 @@ STYLES = {
 }
 
 OVERVIEW_OUTPUT = ANALYSIS_DIR / "defect_struts_overview.png"
+DBSCAN_CLUSTER_OUTPUT = ANALYSIS_DIR / "dbscan_clusters_3d.png"
 
 
 def load_records() -> dict[str, list[np.ndarray]]:
@@ -119,6 +120,38 @@ def plot_segments(
     plt.close(fig)
 
 
+def plot_dbscan_clusters(records: list[dict], output_path: Path) -> None:
+    """Render all registered struts, colored by their DBSCAN cluster ID."""
+    grouped: dict[int, list[np.ndarray]] = {}
+    for record in records:
+        start = np.asarray(record.get("start_xyz"), dtype=float)
+        end = np.asarray(record.get("end_xyz"), dtype=float)
+        if start.shape != (3,) or end.shape != (3,) or not np.isfinite(np.r_[start, end]).all():
+            continue
+        grouped.setdefault(int(record["cluster_id"]), []).append(np.vstack([start, end]))
+    if not grouped:
+        raise ValueError("No DBSCAN cluster labels were found to render.")
+
+    axis_limits = compute_axis_limits({str(key): value for key, value in grouped.items()})
+    colors = plt.get_cmap("tab10")
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
+    handles: list[Line2D] = []
+    for index, (cluster_id, segments) in enumerate(sorted(grouped.items(), key=lambda item: len(item[1]), reverse=True)):
+        color = "#6b7280" if cluster_id == -1 else colors(index % 10)
+        for segment in segments:
+            alpha = 0.18 if len(segments) > 100 else 0.95
+            linewidth = 0.45 if len(segments) > 100 else 1.6
+            ax.plot(segment[:, 0], segment[:, 1], segment[:, 2], color=color, alpha=alpha, linewidth=linewidth)
+        handles.append(Line2D([0], [0], color=color, linewidth=2, label=f"cluster {cluster_id} ({len(segments):,} struts)"))
+    configure_axes(ax, axis_limits)
+    ax.set_title("Full-Stack DBSCAN Clustering (Euclidean Distance)")
+    ax.legend(handles=handles, loc="upper right", frameon=True)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=220)
+    plt.close(fig)
+
+
 def write_summary(grouped: dict[str, list[np.ndarray]]) -> None:
     lines = [
         "# Defect Strut Visualization",
@@ -152,13 +185,15 @@ def write_summary(grouped: dict[str, list[np.ndarray]]) -> None:
 
 
 def main() -> None:
+    records = json.loads(PER_STRUT_DEFECTS.read_text(encoding="utf-8"))
+    plot_dbscan_clusters(records, DBSCAN_CLUSTER_OUTPUT)
     grouped = load_records()
-    axis_limits = compute_axis_limits(grouped)
-
-    plot_segments(grouped, OVERVIEW_OUTPUT, "Weak Defect Struts Overview", axis_limits)
-    write_summary(grouped)
+    if any(grouped.values()):
+        axis_limits = compute_axis_limits(grouped)
+        plot_segments(grouped, OVERVIEW_OUTPUT, "Weak Defect Struts Overview", axis_limits)
+        write_summary(grouped)
     print("Visualization pipeline step")
-    print(f"Rendered combined defect strut overview under {ANALYSIS_DIR.relative_to(PROJECT_ROOT)}.")
+    print(f"Rendered full-stack DBSCAN cluster overview under {ANALYSIS_DIR.relative_to(PROJECT_ROOT)}.")
 
 
 if __name__ == "__main__":

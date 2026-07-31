@@ -56,6 +56,7 @@ PIPELINE_STEPS = [
             "data/missing_struts/analysis/defect_method_comparison/clustering_baseline_result.json",
             "data/missing_struts/analysis/defect_method_comparison/simple_json_assisted_result.json",
             "data/missing_struts/analysis/defect_method_comparison/simple_mask_only_result.json",
+            "data/missing_struts/analysis/defect_method_comparison/isolation_forest_handcrafted_embeddings_result.json",
             "data/missing_struts/analysis/cluster_summary.json",
             "data/missing_struts/analysis/cluster_labels.json",
             "data/missing_struts/analysis/per_strut_defects.json",
@@ -179,6 +180,9 @@ def collect_step_results(step_name: str) -> list[dict[str, Any]]:
         mask_only = read_json_result(
             "data/missing_struts/analysis/defect_method_comparison/simple_mask_only_result.json"
         )
+        isolation_forest = read_json_result(
+            "data/missing_struts/analysis/defect_method_comparison/isolation_forest_handcrafted_embeddings_result.json"
+        )
         baseline_examples = [
             {
                 "strut_id": item["strut_id"],
@@ -224,6 +228,15 @@ def collect_step_results(step_name: str) -> list[dict[str, Any]]:
                     "method_name": mask_only["method_name"],
                     "status": mask_only["status"],
                     "summary_metrics": mask_only["summary_metrics"],
+                },
+            },
+            {
+                "title": "Isolation Forest handcrafted-embedding trial",
+                "source": "data/missing_struts/analysis/defect_method_comparison/isolation_forest_handcrafted_embeddings_result.json",
+                "content": {
+                    "method_name": isolation_forest["method_name"],
+                    "status": isolation_forest["status"],
+                    "summary_metrics": isolation_forest["summary_metrics"],
                 },
             },
             {

@@ -1,0 +1,1 @@
+Analyze this fresh, condition-isolated seven-slice CT stack. Context follows as JSON: {context}

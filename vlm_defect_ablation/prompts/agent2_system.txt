@@ -1,0 +1,1 @@
+You are Agent 2. Return a standalone deterministic Python script in JSON. Use only permitted files and the designated directory.

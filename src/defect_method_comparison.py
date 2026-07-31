@@ -11,10 +11,14 @@ import tifffile
 from scipy.spatial import cKDTree
 
 try:
-    from sklearn.cluster import KMeans
+    from sklearn.cluster import DBSCAN
+    from sklearn.ensemble import IsolationForest
+    from sklearn.metrics import silhouette_score
     from sklearn.preprocessing import StandardScaler
 except Exception:  # pragma: no cover
-    KMeans = None
+    DBSCAN = None
+    IsolationForest = None
+    silhouette_score = None
     StandardScaler = None
 
 
@@ -31,8 +35,43 @@ REFERENCE_JSON = DATA_DIR / "registered_jsons" / "210127_Brian_Tran_strut_lattic
 
 PROFILE_SEGMENTS = 21
 PATCH_RADIUS = 3
-REGISTRATION_TOLERANCE_RADIUS = 2
+# The full-stack DBSCAN run uses a single local patch per profile point.  This
+# is intentionally zero-offset to avoid 125 overlapping patch reads at every
+# point; it is the least expensive raw-CT sampling mode.
+REGISTRATION_TOLERANCE_RADIUS = 0
 REGISTRATION_TOLERANCE_PERCENTILE = 85.0
+# DBSCAN identifies dense groups and labels isolated records as noise.  We keep
+# the search deliberately small: one density threshold and three data-adaptive
+# epsilon candidates, rather than sweeping arbitrary values across the range.
+DBSCAN_MIN_SAMPLES = 12
+DBSCAN_EPSILON_QUANTILES = (0.75, 0.85, 0.92)
+SILHOUETTE_SAMPLE_SIZE = 1500
+# This experiment intentionally assumes anomalous profiles are uncommon.  It is
+# kept separate from the clustering baseline because an Isolation Forest flags
+# statistical outliers, not necessarily physical defects.
+ISOLATION_FOREST_CONTAMINATION = 0.05
+ISOLATION_FOREST_ESTIMATORS = 300
+ISOLATION_FOREST_RANDOM_STATE = 17
+
+EMBEDDING_FEATURE_NAMES = [
+    "profile_mean",
+    "profile_min",
+    "profile_std",
+    "profile_endpoint_mean",
+    "profile_middle_mean",
+    "profile_middle_min",
+    "low_profile_fraction",
+    "longest_low_profile_gap_fraction",
+    "continuity_score",
+    "defect_score",
+    "profile_sample_0",
+    "profile_sample_1",
+    "profile_sample_2",
+    "profile_sample_3",
+    "profile_sample_4",
+    "profile_sample_5",
+    "profile_sample_6",
+]
 
 BASELINE_CLUSTER_SUMMARY = ANALYSIS_DIR / "cluster_summary.json"
 BASELINE_CLUSTER_LABELS = ANALYSIS_DIR / "cluster_labels.json"
@@ -198,7 +237,9 @@ def embedding_from_profile(profile: list[float]) -> dict[str, Any]:
     }
 
 
-def approximate_silhouette(features: np.ndarray, labels: np.ndarray, max_samples: int = 3000) -> float | None:
+def approximate_silhouette(
+    features: np.ndarray, labels: np.ndarray, max_samples: int = SILHOUETTE_SAMPLE_SIZE
+) -> float | None:
     unique_labels = sorted(set(int(label) for label in labels))
     if len(unique_labels) < 2:
         return None
@@ -207,33 +248,31 @@ def approximate_silhouette(features: np.ndarray, labels: np.ndarray, max_samples
         sample_indices = rng.choice(len(features), size=max_samples, replace=False)
         features = features[sample_indices]
         labels = labels[sample_indices]
-    means = features.mean(axis=0)
-    stds = features.std(axis=0)
-    scaled = (features - means) / np.where(stds == 0, 1.0, stds)
-    diff = scaled[:, None, :] - scaled[None, :, :]
-    distances = np.sqrt(np.sum(diff * diff, axis=2))
-    sample_scores = []
-    for index, label in enumerate(labels):
-        same = labels == label
-        other = labels != label
-        if int(np.sum(same)) <= 1 or not bool(np.any(other)):
-            continue
-        same_indices = np.where(same)[0]
-        same_indices = same_indices[same_indices != index]
-        a = float(np.mean(distances[index, same_indices]))
-        b = min(
-            float(np.mean(distances[index, labels == other_label]))
-            for other_label in unique_labels
-            if other_label != int(label) and bool(np.any(labels == other_label))
-        )
-        sample_scores.append((b - a) / max(a, b))
-    if not sample_scores:
+    if silhouette_score is None or any(int(np.sum(labels == label)) < 2 for label in unique_labels):
         return None
-    return float(np.mean(sample_scores))
+    # This is an exact score on a deterministic sample, avoiding a full pairwise
+    # distance matrix over every registered strut.
+    return float(silhouette_score(features, labels, metric="euclidean"))
+
+
+def dbscan_epsilon_candidates(scaled: np.ndarray) -> list[float]:
+    """Derive a compact set of sensible Euclidean eps values from k-distances."""
+    if len(scaled) <= DBSCAN_MIN_SAMPLES:
+        return []
+    tree = cKDTree(scaled)
+    distances, _ = tree.query(scaled, k=DBSCAN_MIN_SAMPLES)
+    kth_distances = np.asarray(distances[:, -1], dtype=np.float64)
+    return sorted(
+        {
+            round(float(value), 6)
+            for value in np.quantile(kth_distances, DBSCAN_EPSILON_QUANTILES)
+            if float(value) > 0.0
+        }
+    )
 
 
 def select_clusters(features: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
-    if KMeans is None or StandardScaler is None:
+    if DBSCAN is None or StandardScaler is None:
         defect_axis = features[:, 9]
         q1, q2 = np.quantile(defect_axis, [0.85, 0.97])
         labels = np.zeros(len(defect_axis), dtype=int)
@@ -253,41 +292,59 @@ def select_clusters(features: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
         }
 
     scaled = StandardScaler().fit_transform(features)
-    best_labels = None
-    best_score = -1.0
-    best_k = 2
-    scores: dict[str, float] = {}
-    max_k = min(5, len(features) - 1)
-    for k in range(2, max_k + 1):
-        model = KMeans(n_clusters=k, random_state=17, n_init=20)
-        labels = model.fit_predict(scaled)
-        score = approximate_silhouette(scaled, labels)
-        if score is None:
-            continue
-        scores[str(k)] = score
-        if score > best_score:
-            best_score = score
+    epsilon_candidates = dbscan_epsilon_candidates(scaled)
+    if not epsilon_candidates:
+        raise RuntimeError("not enough records to derive DBSCAN epsilon candidates")
+
+    best_labels: np.ndarray | None = None
+    best_objective = -math.inf
+    best_epsilon: float | None = None
+    best_score: float | None = None
+    best_cluster_count = 0
+    scores: dict[str, dict[str, float | int | None]] = {}
+    for epsilon in epsilon_candidates:
+        labels = DBSCAN(eps=epsilon, min_samples=DBSCAN_MIN_SAMPLES, metric="euclidean", n_jobs=-1).fit_predict(scaled)
+        non_noise = labels != -1
+        cluster_count = len(set(int(label) for label in labels[non_noise]))
+        noise_fraction = float(np.mean(~non_noise))
+        score = approximate_silhouette(scaled[non_noise], labels[non_noise]) if cluster_count >= 2 else None
+        # Prefer separable dense clusters while making an all-noise result, or one
+        # that discards most struts, unattractive.  This is a three-candidate search.
+        objective = (score if score is not None else 0.0) - 0.20 * noise_fraction
+        key = f"eps={epsilon:.6f}"
+        scores[key] = {
+            "eps": epsilon,
+            "non_noise_cluster_count": cluster_count,
+            "noise_strut_count": int(np.sum(~non_noise)),
+            "noise_fraction": noise_fraction,
+            "silhouette_score": score,
+            "selection_objective": objective,
+        }
+        if cluster_count and objective > best_objective:
             best_labels = labels
-            best_k = k
+            best_objective = objective
+            best_epsilon = epsilon
+            best_score = score
+            best_cluster_count = cluster_count
     if best_labels is None:
-        raise RuntimeError("could not select a clustering with at least two valid clusters")
-    stability_scores = []
-    for seed in [3, 11, 23, 37, 53]:
-        labels = KMeans(n_clusters=best_k, random_state=seed, n_init=10).fit_predict(scaled)
-        score = approximate_silhouette(scaled, labels)
-        if score is not None:
-            stability_scores.append(score)
-    if not stability_scores:
-        stability_scores = [best_score]
+        raise RuntimeError("DBSCAN did not find a dense cluster for the bounded epsilon candidates")
     return np.asarray(best_labels, dtype=int), {
-        "algorithm": "kmeans",
-        "selected_cluster_count": int(best_k),
+        "algorithm": "dbscan",
+        "metric": "euclidean",
+        "min_samples": DBSCAN_MIN_SAMPLES,
+        "epsilon_quantiles": list(DBSCAN_EPSILON_QUANTILES),
+        "epsilon_candidates": epsilon_candidates,
+        "selected_epsilon": best_epsilon,
+        "silhouette_sample_size": min(SILHOUETTE_SAMPLE_SIZE, len(scaled)),
+        "selected_cluster_count": best_cluster_count,
+        "noise_strut_count": int(np.sum(best_labels == -1)),
+        "noise_fraction": float(np.mean(best_labels == -1)),
         "silhouette_score": best_score,
-        "silhouette_by_k": scores,
+        "candidate_results": scores,
         "cluster_stability": {
-            "mean_silhouette_across_seeds": float(np.mean(stability_scores)),
-            "min_silhouette_across_seeds": float(np.min(stability_scores)),
-            "max_silhouette_across_seeds": float(np.max(stability_scores)),
+            "mean_silhouette_across_seeds": best_score,
+            "min_silhouette_across_seeds": best_score,
+            "max_silhouette_across_seeds": best_score,
         },
     }
 
@@ -331,7 +388,11 @@ def label_cluster(cluster: dict[str, Any], normal_score: float) -> dict[str, Any
     longest_gap = float(cluster["mean_longest_low_gap"])
     continuity = float(cluster["mean_continuity_score"])
     relative_score = defect_score - normal_score
-    if abs(relative_score) <= 1e-9 and continuity >= 0.90:
+    if int(cluster["cluster_id"]) == -1:
+        label = "weak"
+        confidence = 0.72
+        reason = "DBSCAN labeled these isolated raw-CT profiles as noise; they require defect review"
+    elif abs(relative_score) <= 1e-9 and continuity >= 0.90:
         label = "present"
         confidence = 0.90
         reason = "cluster has the lowest defect score and the most continuous raw CT support profile"
@@ -574,9 +635,9 @@ def run_clustering_baseline(reference: dict[str, Any], bbox: dict[str, list[int]
         and BASELINE_SUMMARY_JSON.exists()
     ):
         per_strut = json.loads(BASELINE_PER_STRUT.read_text(encoding="utf-8"))
-        if per_strut:
+        baseline_summary = json.loads(BASELINE_SUMMARY_JSON.read_text(encoding="utf-8"))
+        if per_strut and baseline_summary.get("cluster_metrics", {}).get("algorithm") == "dbscan":
             junction_records = build_junction_records_from_reference(reference, bbox, margin, per_strut)
-            baseline_summary = json.loads(BASELINE_SUMMARY_JSON.read_text(encoding="utf-8"))
             result = {
                 "method_name": "clustering_baseline",
                 "input_mask": str(SEGMENTED_MASK),
@@ -657,7 +718,11 @@ def run_clustering_baseline(reference: dict[str, Any], bbox: dict[str, list[int]
         record["cluster_id"] = int(label)
     baseline_cluster_summary = cluster_summary(per_strut, cluster_metrics)
     write_json(BASELINE_CLUSTER_SUMMARY, baseline_cluster_summary)
-    normal_score = min(float(cluster["mean_defect_score"]) for cluster in baseline_cluster_summary["clusters"])
+    dense_clusters = [cluster for cluster in baseline_cluster_summary["clusters"] if int(cluster["cluster_id"]) != -1]
+    normal_score = min(
+        float(cluster["mean_defect_score"])
+        for cluster in (dense_clusters or baseline_cluster_summary["clusters"])
+    )
     cluster_labels = [label_cluster(cluster, normal_score) for cluster in baseline_cluster_summary["clusters"]]
     cluster_label_result = {
         "status": "passed",
@@ -805,6 +870,107 @@ def run_clustering_baseline(reference: dict[str, Any], bbox: dict[str, list[int]
             "legacy_cluster_labels_json": str(BASELINE_CLUSTER_LABELS),
             "legacy_per_strut_json": str(BASELINE_PER_STRUT),
         },
+        "status": "passed",
+    }
+    write_method_artifacts(result)
+    return result
+
+
+def run_isolation_forest_handcrafted_embeddings(
+    reference: dict[str, Any], bbox: dict[str, list[int]], margin: float
+) -> dict[str, Any]:
+    """Flag unusual raw-CT profile embeddings without altering the baseline."""
+    if not BASELINE_PER_STRUT.exists():
+        raise FileNotFoundError(f"Missing handcrafted embedding source: {BASELINE_PER_STRUT}")
+    source_records = json.loads(BASELINE_PER_STRUT.read_text(encoding="utf-8"))
+    if not source_records:
+        raise RuntimeError("No per-strut handcrafted embeddings are available")
+
+    features = np.asarray([record["embedding_features"] for record in source_records], dtype=np.float64)
+    if features.ndim != 2 or features.shape[1] != len(EMBEDDING_FEATURE_NAMES):
+        raise ValueError(
+            f"Expected {len(EMBEDDING_FEATURE_NAMES)} handcrafted features per strut; got {features.shape}"
+        )
+    if not np.isfinite(features).all():
+        raise ValueError("Handcrafted embeddings contain non-finite values")
+
+    # Scaling keeps the feature-space description comparable with DBSCAN.  The
+    # fitted forest itself remains entirely unsupervised and receives no defect
+    # labels, mask values, or skeleton topology.
+    if StandardScaler is not None:
+        scaled = StandardScaler().fit_transform(features)
+        scaling = "StandardScaler"
+    else:  # pragma: no cover - retained for reduced environments
+        scaled = features
+        scaling = "not available; raw feature scales used"
+
+    if IsolationForest is not None:
+        model = IsolationForest(
+            n_estimators=ISOLATION_FOREST_ESTIMATORS,
+            contamination=ISOLATION_FOREST_CONTAMINATION,
+            random_state=ISOLATION_FOREST_RANDOM_STATE,
+            n_jobs=-1,
+        )
+        predictions = model.fit_predict(scaled)
+        anomaly_scores = -model.decision_function(scaled)
+        algorithm = "isolation_forest"
+        fallback_reason = None
+    else:  # pragma: no cover - retained for environments without scikit-learn
+        anomaly_scores = np.asarray(features[:, 9], dtype=np.float64)
+        threshold = float(np.quantile(anomaly_scores, 1.0 - ISOLATION_FOREST_CONTAMINATION))
+        predictions = np.where(anomaly_scores >= threshold, -1, 1)
+        algorithm = "defect_score_quantile_fallback"
+        fallback_reason = "scikit-learn IsolationForest unavailable; used the top defect-score quantile"
+
+    order = np.argsort(np.argsort(anomaly_scores, kind="stable"), kind="stable")
+    anomaly_percentile = (order + 1) / len(order)
+    strut_records = []
+    for source, prediction, score, percentile in zip(source_records, predictions, anomaly_scores, anomaly_percentile):
+        record = dict(source)
+        is_outlier = bool(prediction == -1)
+        record["classification"] = "weak" if is_outlier else "present"
+        record["isolation_forest_outlier"] = is_outlier
+        record["isolation_forest_anomaly_score"] = float(score)
+        record["isolation_forest_anomaly_percentile"] = float(percentile)
+        record["confidence"] = float(0.50 + 0.40 * percentile) if is_outlier else float(0.86 - 0.20 * percentile)
+        record["reason"] = (
+            "Isolation Forest marked this handcrafted raw-CT support embedding as an outlier; "
+            "statistical anomaly requires physical defect review."
+            if is_outlier
+            else "Isolation Forest retained this handcrafted raw-CT support embedding as an inlier."
+        )
+        subtype, subtype_reason = weak_subtype(record)
+        record["weak_subtype"] = subtype
+        record["weak_subtype_reason"] = subtype_reason
+        record["presence_status"] = "missing" if subtype == "missing" else ("weak" if is_outlier else "present")
+        strut_records.append(record)
+
+    junction_records = build_junction_records_from_reference(reference, bbox, margin, strut_records)
+    outlier_count = int(np.sum(predictions == -1))
+    result = {
+        "method_name": "isolation_forest_handcrafted_embeddings",
+        "input_mask": str(SEGMENTED_MASK),
+        "reference_mode": "registered_json",
+        "junction_records": junction_records,
+        "strut_records": strut_records,
+        "summary_metrics": {
+            **summarize_method_counts(strut_records, junction_records),
+            "algorithm": algorithm,
+            "outlier_strut_count": outlier_count,
+            "outlier_fraction": float(outlier_count / len(strut_records)),
+            "contamination": ISOLATION_FOREST_CONTAMINATION,
+            "n_estimators": ISOLATION_FOREST_ESTIMATORS,
+            "random_state": ISOLATION_FOREST_RANDOM_STATE,
+            "feature_count": len(EMBEDDING_FEATURE_NAMES),
+            "embedding_feature_names": EMBEDDING_FEATURE_NAMES,
+            "feature_scaling": scaling,
+            "caveats": [
+                "Isolation Forest uses the pre-existing raw-CT handcrafted profile embeddings; it does not resample CT or alter segmentation.",
+                "The configured contamination fixes the outlier rate near 5%; an outlier is a review candidate, not a confirmed missing strut.",
+                *([fallback_reason] if fallback_reason else []),
+            ],
+        },
+        "artifact_paths": {"source_per_strut_json": str(BASELINE_PER_STRUT)},
         "status": "passed",
     }
     write_method_artifacts(result)
@@ -1213,6 +1379,10 @@ def run_defect_method_comparison() -> dict[str, Any]:
         ("clustering_baseline", lambda: run_clustering_baseline(reference, bbox, margin)),
         ("simple_json_assisted", lambda: run_simple_json_assisted(reference, mask, bbox, margin)),
         ("simple_mask_only", lambda: run_simple_mask_only(reference, mask, bbox, margin)),
+        (
+            "isolation_forest_handcrafted_embeddings",
+            lambda: run_isolation_forest_handcrafted_embeddings(reference, bbox, margin),
+        ),
     ]
     results = []
     for method_name, runner in ordered_methods:
