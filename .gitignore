@@ -179,3 +179,17 @@ test_run/*.tif
 
 *.tif
 *.tiff
+
+# Historical and one-off CT analysis outputs (preserved locally, not versioned)
+data/missing_struts/analysis/stackwise_deterministic_baseline/
+data/missing_struts/analysis/stackwise_deterministic_baseline_v2/
+data/missing_struts/analysis/stackwise_deterministic_baseline_v3/
+data/missing_struts/analysis/stackwise_deterministic_baseline_v4/
+data/missing_struts/analysis/stackwise_deterministic_baseline_v6/
+data/9x9x9_octet_lattice/segmentation/test_run/
+data/missing_struts/analysis/stackwise_two_agent_detection_slice_0385/
+data/missing_struts/analysis/stackwise_two_agent_detection_slice_0385_final/
+data/missing_struts/analysis/stackwise_two_agent_detection_slice_0385_top_right_full_manifest_live_test/
+data/missing_struts/analysis/stackwise_two_agent_detection_slice_0385_top_right_input/
+data/missing_struts/analysis/stackwise_two_agent_detection_slice_0385_top_right_live_test/
+data/missing_struts/analysis/spectral_clusters_3d.png

@@ -1,1239 +1,839 @@
-Implement a two-agent experimental pipeline that uses a vision-language model to generate and test defect-detection methods from small stacks of consecutive 2D CT slices in a multi-page TIFF file.
+Implement a two-agent workflow for automatically designing a Python method that detects missing and broken struts in 2D CT slices of a lattice structure.
 
-The goal is to compare how the information provided to the VLM changes the detection instructions and generated code.
+The motivation is to reduce the need for researchers to manually inspect CT images and manually design defect-detection algorithms.
 
-The experiment must compare:
+The system must use:
 
-1. VLM receives images only.
-2. VLM receives images plus segmentation masks.
-3. VLM receives images plus JSON geometry.
-4. VLM receives images, segmentation masks, and JSON geometry.
-5. VLM receives images plus a relevant research paper.
-6. VLM receives all available context.
+1. Agent 1: a vision-language model that visually inspects one representative 2D CT slice.
+2. Agent 2: a Codex subagent that does not visually inspect the slice and does not require vision capabilities.
+3. A normal Python controller that runs the generated detector on selected slices from a multi-page TIFF file.
 
-Implement only:
-
-1. An instruction-generation agent.
-2. A code-generation and execution agent.
-3. A normal deterministic Python controller that loops through slice stacks and experimental conditions.
-
-The only target defect categories are:
+Only detect:
 
 * missing struts
 * broken struts
-* thin struts
-* bent struts
 
-Do not add other defect categories.
+Do not include thin struts, bent struts, porosity, surface roughness, junction defects, or other defect categories.
 
-# Overall architecture
+Do not implement an orchestrator agent.
+
+# Core workflow
 
 The workflow must be:
 
 ```text
-multi-page TIFF
-    ↓
-construct seven-slice stack
-    ↓
-build condition-specific context
-    ↓
-Agent 1 analyzes the stack
-    ↓
-Agent 1 writes detailed detection instructions
-    ↓
-Agent 2 receives the same permitted context and Agent 1 instructions
-    ↓
-Agent 2 generates Python code
-    ↓
-execute generated code on the stack
-    ↓
-save measurements, detections, overlays, uncertainty, and diagnostics
-    ↓
-repeat for all selected stacks and experimental conditions
+One representative 2D CT slice
+        ↓
+Agent 1 visually examines the slice
+        ↓
+Agent 1 produces structured observations and algorithm-design instructions
+        ↓
+Agent 2 receives:
+    - Agent 1's textual and structured output
+    - an uploaded relevant research paper as a local PDF
+    - information about available Python libraries and dataset format
+        ↓
+Agent 2 generates a reusable Python detection script
+        ↓
+The script is executed on selected slices from the TIFF file
+        ↓
+The script saves missing-strut and broken-strut candidates,
+measurements, masks, and visual overlays
 ```
 
-Do not use an AI agent to control the loop.
+Agent 2 must not receive the representative slice as an image.
 
-The experiment loop must be ordinary Python code.
+Agent 2 may receive only textual information derived from Agent 1, the local research paper, and technical information about the input-file formats and execution environment.
 
-# Input data
+The generated Python detector will receive CT slices when it is executed. This is separate from Agent 2 receiving an image during code generation.
 
-The project must support the following configurable inputs:
+# Purpose of Agent 1
 
-* one multi-page grayscale TIFF file
-* optional binary segmentation TIFF or directory of binary mask images
-* optional JSON geometry describing the intended lattice
-* optional local PDF or text file containing a relevant research paper
-* output directory
-* VLM provider
-* VLM model
-* VLM generation settings
-* selected experimental conditions
-* selected center slices
-* random seed
-* timeout settings
-* maximum token usage
-* voxel spacing when known
-* whether JSON geometry is registered to the TIFF
+Agent 1 replaces the initial manual image examination normally performed by a researcher.
 
-The TIFF currently contains 761 slices.
+Agent 1 receives exactly one representative grayscale CT slice extracted from the multi-page TIFF file.
 
-Do not hardcode file names or paths.
+Agent 1 must:
 
-Use a YAML configuration file and allow important options to be overridden through the command line.
+1. Visually inspect the lattice structure in the slice.
+2. Describe the repeating geometric pattern.
+3. Describe the appearance of visible struts and junctions.
+4. Identify visual evidence that could indicate a missing strut.
+5. Identify visual evidence that could indicate a broken strut.
+6. Describe how missing and broken struts may differ visually.
+7. Identify repeating spatial relationships that could help infer where struts are expected.
+8. Identify measurable image properties that a Python script could calculate.
+9. Translate visual observations into detailed image-processing instructions.
+10. State ambiguities and limitations of using one 2D slice.
+11. Avoid writing Python code.
+12. Avoid making final defect classifications for the dataset.
+13. Avoid inventing exact thresholds without explaining how they could be estimated adaptively.
+14. Avoid relying on neighboring slices.
+15. Focus only on information visible in the supplied slice.
 
-# Slice-stack construction
+Agent 1 must not receive the research paper.
 
-Construct ordered stacks of seven consecutive slices:
+This separation is intentional:
+
+* Agent 1 contributes image-specific visual observations.
+* Agent 2 combines those observations with methods from the research paper.
+
+# Agent 1 input
+
+Agent 1 receives:
+
+* one grayscale CT slice
+* its slice index
+* original image width and height
+* a statement that the image is one cross-sectional CT slice of a lattice structure
+* a statement that the desired detector should identify missing and broken struts
+* no research paper
+* no neighboring slices
+* no manual labels
+* no ground-truth defect locations
+
+Use a high-resolution version of the slice.
+
+Do not reduce the resolution enough to remove thin lattice features or small gaps.
+
+# Agent 1 instructions
+
+Use an Agent 1 system prompt equivalent to:
 
 ```text
-[z-3, z-2, z-1, z, z+1, z+2, z+3]
+You are a scientific image-analysis method designer.
+
+You are examining one 2D grayscale CT slice of a repeating lattice
+structure. Researchers want to avoid manually examining images and manually
+designing a defect-detection algorithm.
+
+Your task is to inspect the supplied image and produce precise observations and
+implementation instructions that another non-vision coding agent can use to
+write a Python detector.
+
+The detector must identify only:
+
+1. missing-strut candidates
+2. broken-strut candidates
+
+Do not write code.
+
+Do not claim that a defect is confirmed.
+
+Describe what is visibly present in the image, how the lattice repeats, how
+intact struts appear, where material normally connects, and which measurable
+properties could distinguish absence from a localized break.
+
+The coding agent will not see the image. Therefore, your description must be
+specific enough for it to design the algorithm without visual access.
+
+Separate direct visual observations from inferred structural assumptions.
+
+Do not invent coordinates, measurements, thresholds, or defect locations.
+
+When suggesting a threshold, explain how it should be estimated adaptively from
+the image or from the population of detected structures.
+
+Only discuss the supplied 2D slice. Do not assume access to neighboring slices.
 ```
 
-Use stride 1 by default.
+# Agent 1 output
 
-For 761 slices and zero-based indexing:
+Require Agent 1 to return valid JSON.
 
-* the first valid center slice is 3
-* the last valid center slice is 757
-* the number of valid stacks is 755
-
-The program must support:
-
-* all valid stacks
-* a manually specified list of center slices
-* a configurable range of center slices
-* random selection of a configurable number of stacks
-* reproducible random selection using a seed
-
-Each stack must preserve:
-
-* original grayscale arrays
-* original image dimensions
-* original slice indices
-* slice order
-* center-slice identity
-
-Create a labeled contact sheet for VLM input.
-
-The contact sheet must clearly show:
-
-* the seven slices in order
-* the absolute slice index of each image
-* which slice is the center slice
-* no defect labels
-* no JSON-derived overlay unless the condition permits JSON
-* no segmentation overlay unless the condition permits segmentation
-
-Do not resize images in a way that removes thin-strut details.
-
-Any resizing must:
-
-* preserve aspect ratio
-* be configurable
-* record the original and resized dimensions
-* preserve a high-resolution copy for Agent 2
-
-# Experimental conditions
-
-Each condition must use an independent VLM request with a fresh context.
-
-Do not share conversation history between conditions.
-
-Do not let outputs from one condition appear in another condition's prompt.
-
-## Condition A: images_only
-
-Agent 1 receives only:
-
-* seven consecutive grayscale CT slices
-* their slice indices and order
-* the center-slice index
-* a statement that the images are consecutive CT slices of a lattice structure
-* the four defect names
-
-Agent 1 must not receive:
-
-* segmentation masks
-* JSON geometry
-* expected strut paths
-* junction coordinates
-* strut IDs
-* voxel spacing
-* research papers
-* outputs from other conditions
-* manually written detection rules
-
-## Condition B: images_segmentation
-
-Agent 1 receives:
-
-* seven grayscale CT slices
-* corresponding binary segmentation masks
-* slice indices and order
-* center-slice index
-* the four defect names
-
-Agent 1 must not receive:
-
-* JSON geometry
-* strut IDs
-* expected junctions
-* expected strut paths
-* research papers
-* outputs from other conditions
-
-## Condition C: images_geometry
-
-Agent 1 receives:
-
-* seven grayscale CT slices
-* relevant JSON geometry
-* available junction records
-* available strut records
-* strut IDs when present
-* endpoint information when present
-* coordinate conventions when known
-* voxel spacing when known
-* whether the geometry is registered to the TIFF
-* the four defect names
-
-Agent 1 must not receive:
-
-* segmentation masks
-* research papers
-* outputs from other conditions
-
-## Condition D: images_segmentation_geometry
-
-Agent 1 receives:
-
-* seven grayscale CT slices
-* corresponding binary masks
-* relevant JSON geometry
-* available strut IDs
-* available expected strut paths
-* available junction locations
-* coordinate and voxel-spacing information
-* whether geometry is registered
-* the four defect names
-
-Agent 1 must not receive:
-
-* research papers
-* outputs from other conditions
-
-## Condition E: images_paper
-
-Agent 1 receives:
-
-* seven grayscale CT slices
-* selected excerpts from a relevant local research paper
-* paper title and page or section identifiers
-* slice indices and order
-* center-slice index
-* the four defect names
-
-Agent 1 must not receive:
-
-* segmentation masks
-* JSON geometry
-* strut IDs
-* expected strut paths
-* outputs from other conditions
-
-## Condition F: full_context
-
-Agent 1 receives:
-
-* seven grayscale CT slices
-* corresponding binary masks
-* relevant JSON geometry
-* available strut IDs
-* expected strut and junction information
-* coordinate conventions
-* voxel spacing
-* whether geometry is registered
-* selected research-paper excerpts
-* paper page or section identifiers
-* the four defect names
-
-The configuration must allow any condition to be enabled or disabled.
-
-# Strict context isolation
-
-This is an ablation experiment.
-
-The implementation must enforce strict information isolation.
-
-For every condition:
-
-1. Build a new prompt from scratch.
-2. Create a new condition-specific file manifest.
-3. Include only files permitted for that condition.
-4. Use a fresh VLM request with no prior chat history.
-5. Save the exact system prompt, user prompt, images, text context, and manifest.
-6. Run a leakage check before calling the VLM.
-
-The leakage checker must fail the run when prohibited information appears.
-
-Examples of prohibited terms and fields include:
-
-* `strut_id` in image-only conditions
-* `junction` in image-only conditions
-* `geometry` in image-only conditions
-* `segmentation` in conditions without segmentation
-* `paper` in conditions without paper context
-* JSON-derived coordinates in conditions without JSON
-* filenames that reveal defect categories
-* outputs from previous conditions
-
-Do not use filenames such as:
-
-```text
-missing_strut_example.png
-broken_slice_100.png
-thin_defect_stack.png
-```
-
-Use neutral filenames such as:
-
-```text
-stack_000100.png
-slice_000097.png
-mask_000097.png
-```
-
-# Agent 1: instruction-generation agent
-
-Agent 1 analyzes one seven-slice stack under one experimental condition.
-
-Agent 1 must not directly act as the final detector.
-
-Its task is to produce precise, executable, image-processing instructions for Agent 2.
-
-Agent 1 must be instructed to:
-
-1. Analyze the seven slices in their correct order.
-2. Examine how visible structures appear, disappear, thicken, thin, shift, connect, or disconnect across slices.
-3. Identify possible visual evidence for missing, broken, thin, and bent struts.
-4. Separate direct observations from assumptions.
-5. Avoid claiming that a defect definitely exists without measurable evidence.
-6. Avoid inventing coordinates, thresholds, strut IDs, geometry, or paper results.
-7. Define measurable operations that Agent 2 can implement in Python.
-8. Explain how evidence should be combined across all seven slices.
-9. Explain how to handle uncertain or insufficient evidence.
-10. State when seven slices are insufficient for a reliable decision.
-11. Avoid vague instructions such as:
-
-* detect abnormal shapes
-* look for irregularities
-* find unusual regions
-
-12. Avoid requiring model training or labeled data.
-13. Prefer deterministic or unsupervised image-processing methods.
-14. Only use JSON-specific methods when JSON is available.
-15. Only use segmentation-specific methods when masks are available.
-16. Only use paper-derived methods when paper context is available.
-17. Cite the supplied paper page or section when using a paper-derived idea.
-
-Agent 1 may propose measurable operations including:
-
-* foreground occupancy
-* grayscale intensity statistics
-* local contrast
-* connected-component analysis
-* connectivity across slices
-* component persistence
-* gap length
-* endpoint connectivity
-* cross-sectional area
-* equivalent diameter
-* local width
-* local radius
-* distance transform
-* skeletonization
-* centerline extraction
-* centerline continuity
-* straight-line fitting
-* curvature
-* tortuosity
-* centerline displacement
-* deviation from an expected line
-* orientation changes
-* shape consistency across slices
-* comparison with nearby similar structures
-* robust statistical outlier detection
-* comparison with expected JSON geometry when available
-
-Agent 1 must not choose arbitrary fixed thresholds without explaining how they are estimated from the current stack or from comparable structures.
-
-Prefer adaptive measurements such as:
-
-* median-based thresholds
-* median absolute deviation
-* percentile-based thresholds
-* local reference comparisons
-* robust z-scores
-* ratios relative to neighboring struts
-* ratios relative to the same structure in nearby slices
-
-# Agent 1 output schema
-
-Agent 1 must return valid JSON with the following structure:
+Use the following structure:
 
 ```json
 {
-  "condition": "images_only",
-  "center_slice": 100,
-  "observations": [
-    {
-      "observation_id": "obs_001",
-      "description": "Visible structure becomes discontinuous between consecutive slices.",
-      "evidence_slices": [99, 100, 101],
-      "observation_type": "direct",
-      "confidence": 0.75
-    }
-  ],
-  "assumptions": [
-    {
-      "assumption_id": "assumption_001",
-      "description": "Bright segmented regions represent solid lattice material.",
-      "required_for_method": true
-    }
-  ],
-  "defect_definitions": {
-    "missing": {
-      "visual_indicators": [],
-      "measurable_tests": [],
-      "confounding_cases": []
-    },
-    "broken": {
-      "visual_indicators": [],
-      "measurable_tests": [],
-      "confounding_cases": []
-    },
-    "thin": {
-      "visual_indicators": [],
-      "measurable_tests": [],
-      "confounding_cases": []
-    },
-    "bent": {
-      "visual_indicators": [],
-      "measurable_tests": [],
-      "confounding_cases": []
-    }
+  "slice_index": 100,
+  "image_description": {
+    "overall_structure": "",
+    "foreground_appearance": "",
+    "background_appearance": "",
+    "contrast_characteristics": "",
+    "noise_or_artifacts": []
   },
-  "algorithm": {
+  "lattice_pattern": {
+    "repeating_pattern_description": "",
+    "apparent_strut_orientations": [],
+    "junction_appearance": "",
+    "approximate_symmetries": [],
+    "how_expected_strut_locations_may_be_inferred": []
+  },
+  "intact_strut_observations": [
+    {
+      "observation_id": "intact_001",
+      "description": "",
+      "measurable_properties": []
+    }
+  ],
+  "missing_strut_observations": {
+    "visual_indicators": [],
+    "distinction_from_background": [],
+    "measurable_tests": [],
+    "possible_confounders": []
+  },
+  "broken_strut_observations": {
+    "visual_indicators": [],
+    "fragment_patterns": [],
+    "measurable_tests": [],
+    "possible_confounders": []
+  },
+  "missing_vs_broken": {
+    "key_distinctions": [],
+    "ambiguous_cases": [],
+    "recommended_uncertainty_rules": []
+  },
+  "recommended_processing_pipeline": {
     "preprocessing": [],
-    "candidate_detection": [],
-    "feature_measurement": [],
-    "unsupervised_reference_estimation": [],
-    "classification_logic": [],
-    "uncertainty_handling": []
+    "foreground_segmentation": [],
+    "lattice_pattern_estimation": [],
+    "expected_strut_location_estimation": [],
+    "component_and_connectivity_analysis": [],
+    "missing_candidate_logic": [],
+    "broken_candidate_logic": [],
+    "adaptive_threshold_estimation": [],
+    "postprocessing": [],
+    "required_diagnostics": []
   },
-  "required_inputs_for_code": [],
-  "expected_outputs": [],
-  "paper_citations": [],
+  "recommended_measurements": [
+    {
+      "measurement_name": "",
+      "purpose": "",
+      "calculation_description": "",
+      "relevant_to": [
+        "missing",
+        "broken"
+      ]
+    }
+  ],
+  "direct_observations": [],
+  "inferred_assumptions": [],
   "limitations": [],
-  "implementation_instructions": []
+  "instructions_for_coding_agent": []
 }
 ```
 
-Valid values for `observation_type` are:
+Validate Agent 1's response against a JSON schema.
 
-* `direct`
-* `inferred`
-* `paper_derived`
-* `geometry_derived`
+If validation fails:
 
-Validate Agent 1 output using a JSON schema.
-
-When validation fails:
-
-1. Save the raw invalid response.
-2. Send one repair request containing:
-
-   * the invalid response
-   * the schema
-   * validation errors
+1. Save the invalid response.
+2. Make one repair request containing the response, schema, and validation errors.
 3. Validate the repaired response.
-4. If it still fails, mark the run as failed.
-5. Continue to the next stack or condition.
-
-Do not fabricate a replacement response.
+4. If it remains invalid, mark Agent 1 as failed.
+5. Do not fabricate missing content.
 
 Save:
 
-* raw Agent 1 response
-* repaired response when applicable
+* the representative input slice
+* exact Agent 1 system prompt
+* exact Agent 1 user prompt
+* raw response
+* repaired response if applicable
 * validated JSON
-* exact prompts
 * model name
-* model parameters
-* token usage when available
-* request cost when available
+* model settings
+* token usage
 * runtime
-* condition manifest
+* request cost when available
 
-# Agent 2: code-generation and execution agent
+# Research-paper input
+
+Agent 2 receives an uploaded relevant research paper as a local PDF.
+
+Do not ask either agent to browse the internet.
+
+Implement local PDF text extraction.
+
+The paper-processing component must:
+
+1. Accept a configurable PDF path.
+2. Extract text locally.
+3. Preserve page numbers.
+4. Save the full extracted text.
+5. Select relevant excerpts using configurable keywords.
+6. Allow explicit page ranges.
+7. Limit the total excerpt length.
+8. Preserve page references in every excerpt.
+9. Report PDF extraction failures.
+10. Avoid sending the entire paper when only selected sections are relevant.
+
+Default paper-excerpt keywords should include:
+
+```text
+lattice
+strut
+missing strut
+broken strut
+defect
+computed tomography
+CT
+segmentation
+connectivity
+connected component
+image processing
+additive manufacturing
+```
+
+The configuration must support:
+
+```yaml
+paper:
+  path: path/to/paper.pdf
+  pages: []
+  keywords:
+    - lattice
+    - strut
+    - missing strut
+    - broken strut
+    - computed tomography
+    - segmentation
+    - connectivity
+  maximum_excerpt_characters: 16000
+```
+
+Clearly identify paper excerpts as external methodological context.
+
+Do not present paper claims as observations from the representative CT slice.
+
+# Purpose of Agent 2
+
+Agent 2 is a Codex subagent.
+
+Agent 2 does not need vision capabilities.
+
+Agent 2 must not receive the representative CT slice as an image.
 
 Agent 2 receives:
 
-* the same seven-slice stack
-* only the files and context permitted for the current condition
-* Agent 1's validated instructions
-* a description of available Python libraries
-* a designated output directory
+* Agent 1's validated JSON observations
+* selected research-paper excerpts with page references
+* a description of the multi-page TIFF input
+* expected image data types and dimensions
+* available Python libraries
+* the designated project and output directories
+* requirements for the generated detector
 
-Agent 2 must generate a standalone Python script that attempts to apply Agent 1's instructions to the stack.
+Agent 2 must use Agent 1's observations as the image-specific design input.
 
-The script must attempt to detect evidence of:
+Agent 2 must use the paper as methodological support.
 
-* missing struts
-* broken struts
-* thin struts
-* bent struts
+Agent 2 must generate a reusable Python script rather than code specialized to only the representative slice.
 
-Agent 2 must not assume that Agent 1 is correct.
+# Codex subagent configuration
 
-It must explicitly record:
+Create a Codex subagent definition similar to:
 
-* which instructions were implemented
-* which instructions were partially implemented
-* which instructions could not be implemented
-* missing information
-* assumptions added by Agent 2
-* generated thresholds
-* how each threshold was estimated
-* runtime warnings
-* errors
-* uncertain results
+```toml
+name = "strut_detector_builder"
+description = "Generates and tests a reusable Python detector for missing and broken lattice struts using VLM observations and a local research paper."
+sandbox_mode = "workspace-write"
+```
 
-Prefer deterministic and unsupervised techniques using available libraries such as:
+Give the subagent access only to:
 
-* NumPy
-* SciPy
-* scikit-image
-* OpenCV
-* tifffile
-* Pillow
-* pandas
-* matplotlib
-* networkx when needed
+* Agent 1's validated JSON
+* extracted paper excerpts
+* TIFF metadata
+* the designated detector-development directory
+* a small configurable development subset of TIFF slices for executing and debugging the generated script
 
-Do not automatically install packages.
+The Codex subagent may access CT slices as ordinary numerical data while testing the generated script.
 
-When a package is unavailable:
+It must not be expected to visually interpret them.
 
-* record the missing dependency
-* use a simpler available alternative when reasonable
-* otherwise mark the operation as unsupported
+It should use programmatic measurements and generated diagnostic images to debug the implementation.
 
-Agent 2 must not:
+Do not give the subagent unrelated repository files unless needed.
 
-* access the network
-* install packages
-* execute destructive shell commands
-* modify source files
-* write outside the designated run directory
-* inspect files not listed in the condition manifest
-* read outputs from another condition
-* fabricate strut IDs
+# Agent 2 prompt
 
-# Generated detector behavior
+Use a prompt equivalent to:
 
-The generated detector must:
+```text
+You are the coding agent responsible for implementing a reusable Python
+detector for missing and broken struts in individual 2D CT slices of a lattice
+structure.
 
-1. Load only the current seven-slice stack and permitted condition files.
-2. Preserve the original input files.
-3. Perform preprocessing described by Agent 1.
-4. identify candidate structures or regions.
-5. Compute measurable features.
-6. Estimate unsupervised reference values when possible.
-7. Assign one of:
+You do not have vision capabilities and should not attempt to interpret the
+representative CT image directly.
 
-   * missing
-   * broken
-   * thin
-   * bent
-   * apparently_intact
-   * uncertain
-8. Save structured results.
-9. Save diagnostic overlays.
-10. Save intermediate masks and measurements.
-11. Explain each classification using computed values.
+A vision-language model has already examined one representative slice and
+produced structured observations and image-processing instructions. Treat those
+observations as the image-specific design input.
 
-Because there are no labels, classifications must be framed as candidate detections rather than confirmed ground truth.
+You are also given excerpts from a relevant research paper. Use the paper as
+methodological context. Preserve page references in your implementation notes
+when a paper-derived method influences the algorithm.
 
-# Strut identity handling
+Create a reusable Python script named detector.py.
 
-For conditions without JSON geometry:
+The script must process individual slices from a multi-page TIFF file and
+identify only:
 
-* `strut_id` must be `null`
-* use a local candidate ID such as `candidate_001`
-* do not invent a strut identity
+1. possible missing struts
+2. possible broken struts
 
-For conditions with JSON geometry:
+Do not implement thin-strut or bent-strut detection.
 
-* use a real `strut_id` only when the geometry contains it
-* use it only when an explicit spatial association is possible
-* record the matching method
-* record the matching distance or overlap
-* record whether registration is known or assumed
+Do not require labeled data or supervised training.
 
-When geometry is not registered to the TIFF:
+Translate the VLM observations and paper methods into measurable,
+deterministic, or unsupervised image-processing operations.
 
-* do not use JSON coordinates as image coordinates
-* do not spatially assign detections to strut IDs
-* geometry may only be used as structural context
-* set `strut_id` to `null` unless a valid registration transform exists
+Do not merely describe the code. Write the script, execute it on the supplied
+development slices, inspect programmatic outputs, repair runtime errors, and
+save the final working version.
 
-# Agent 2 detection output schema
+Do not hardcode defect coordinates from the representative slice.
 
-Agent 2 must produce JSON matching:
+The detector must generalize to other slices from the same TIFF volume.
+
+Record which VLM instructions and paper-derived methods were implemented,
+modified, or rejected.
+
+When evidence is insufficient, return an uncertain candidate rather than
+forcing a missing or broken label.
+```
+
+# Agent 2 implementation requirements
+
+Agent 2 must create:
+
+```text
+detector.py
+```
+
+The script must be reusable across slices.
+
+It must accept arguments similar to:
+
+```bash
+python detector.py \
+  --tiff-path path/to/scan.tif \
+  --slice-index 100 \
+  --output-dir outputs/slice_000100
+```
+
+Also support a range:
+
+```bash
+python detector.py \
+  --tiff-path path/to/scan.tif \
+  --slice-start 100 \
+  --slice-end 120 \
+  --output-dir outputs/range_100_120
+```
+
+And a list:
+
+```bash
+python detector.py \
+  --tiff-path path/to/scan.tif \
+  --slice-indices 100 150 200 \
+  --output-dir outputs/selected
+```
+
+# Generated detector responsibilities
+
+The generated script must:
+
+1. Load a selected 2D slice from the multi-page TIFF.
+2. Preserve the original grayscale image.
+3. Normalize intensity without discarding the original values.
+4. Segment probable lattice material using an unsupervised method.
+5. Clean the mask using configurable morphological operations.
+6. Detect connected components.
+7. Estimate repeating lattice structure from visible components when possible.
+8. Estimate likely strut orientations.
+9. Estimate expected strut locations using image repetition, symmetry, junction patterns, or other methods derived from Agent 1's observations.
+10. Detect localized connectivity gaps.
+11. Distinguish possible missing struts from possible broken struts.
+12. Save all computed measurements.
+13. Save diagnostic overlays.
+14. Return uncertain when the available evidence is insufficient.
+
+Do not use hardcoded image coordinates.
+
+Do not require manual annotations.
+
+Do not require defect labels.
+
+# Missing-strut candidate logic
+
+A missing-strut candidate should represent a location where the inferred lattice pattern suggests a strut should exist, but little or no corresponding foreground material is detected.
+
+Possible measurements include:
+
+* foreground occupancy in an expected strut corridor
+* difference from corresponding repeated lattice positions
+* absence between expected junction locations
+* missing edge in an inferred lattice graph
+* low line-response strength along an expected orientation
+* lack of connected material through an expected region
+
+The detector must not classify any arbitrary empty background region as a missing strut.
+
+A missing candidate requires an inferred expected strut location.
+
+If no expected location can be inferred confidently, return uncertain.
+
+# Broken-strut candidate logic
+
+A broken-strut candidate should represent a location where partial strut material is present but continuity is interrupted by a localized gap.
+
+Possible measurements include:
+
+* two nearby aligned component fragments
+* opposing component endpoints
+* short gap between fragments
+* similar orientation on each side of the gap
+* material present along most of an inferred strut corridor
+* failed connectivity between otherwise compatible fragments
+* skeleton endpoints separated by a small background region
+
+Distinguish broken from missing using the presence of partial material.
+
+A possible conceptual distinction is:
+
+```text
+missing:
+expected strut corridor has very little material across most of its length
+
+broken:
+expected strut corridor contains substantial partial material but includes a
+localized interruption
+```
+
+Do not use those definitions as fixed thresholds.
+
+Estimate thresholds adaptively.
+
+# Adaptive and unsupervised thresholds
+
+There is no labeled data.
+
+Do not train a supervised classifier.
+
+Do not use fixed thresholds unless they are exposed in configuration and justified.
+
+Prefer:
+
+* Otsu thresholding
+* adaptive thresholding
+* percentile-based thresholding
+* robust medians
+* median absolute deviation
+* interquartile range
+* robust z-scores
+* clustering
+* local comparisons
+* component-size distributions
+* corridor occupancy distributions
+* gap-length distributions
+* orientation-specific comparisons
+
+Record every threshold and how it was estimated.
+
+Do not assume every unusual structure is defective.
+
+# Expected algorithm components
+
+Agent 2 should decide the final implementation based on Agent 1 and the paper, but the script may use:
+
+* grayscale normalization
+* denoising
+* contrast enhancement
+* Otsu or adaptive segmentation
+* morphological cleanup
+* connected-component analysis
+* skeletonization
+* skeleton endpoint detection
+* line or ridge detection
+* Hough transforms
+* graph construction
+* junction detection
+* orientation clustering
+* template-free lattice-period estimation
+* autocorrelation
+* Fourier-domain periodicity estimation
+* symmetry analysis
+* component-pair alignment
+* gap measurement
+* occupancy measurement
+* robust outlier detection
+
+Do not force all techniques into the implementation.
+
+Use only techniques justified by Agent 1's observations, the paper, or empirical programmatic diagnostics.
+
+# Detector output schema
+
+For each processed slice, save JSON similar to:
 
 ```json
 {
-  "condition": "images_only",
-  "center_slice": 100,
+  "slice_index": 100,
+  "segmentation": {
+    "method": "otsu",
+    "threshold": 0.42,
+    "foreground_fraction": 0.18
+  },
+  "lattice_estimation": {
+    "success": true,
+    "estimated_orientations_degrees": [45.0, 135.0],
+    "estimated_periodicity_pixels": 36.4,
+    "method": "autocorrelation_and_line_orientation"
+  },
   "detections": [
     {
       "candidate_id": "candidate_001",
-      "strut_id": null,
-      "label": "thin",
-      "confidence": 0.68,
-      "status": "candidate",
-      "evidence_slices": [98, 99, 100, 101],
+      "label": "possible_broken",
+      "confidence": 0.71,
       "bounding_box": {
         "x_min": 120,
         "y_min": 80,
         "x_max": 170,
-        "y_max": 145
+        "y_max": 140
       },
       "measurements": {
-        "median_width": 3.2,
-        "reference_median_width": 5.7,
-        "width_ratio": 0.56
+        "corridor_occupancy": 0.68,
+        "largest_gap_pixels": 9.0,
+        "fragment_alignment_degrees": 4.2,
+        "endpoint_distance_pixels": 10.1
       },
-      "thresholds": {
-        "thin_width_ratio": 0.65
-      },
-      "threshold_estimation": {
-        "thin_width_ratio": "Derived from the lower tail of widths among comparable components in the current stack."
-      },
-      "reason": "The candidate remains connected but has a substantially smaller local width than comparable structures.",
-      "limitations": [
-        "Only seven slices were available."
-      ]
+      "reason": "Two aligned foreground fragments occupy most of the inferred strut corridor but are separated by a localized gap.",
+      "status": "unverified_candidate"
     }
   ],
   "counts": {
-    "missing": 0,
-    "broken": 0,
-    "thin": 1,
-    "bent": 0,
-    "apparently_intact": 4,
+    "possible_missing": 0,
+    "possible_broken": 1,
     "uncertain": 2
   },
-  "implemented_instructions": [],
-  "partially_implemented_instructions": [],
-  "unsupported_instructions": [],
-  "agent2_assumptions": [],
-  "uncertain_candidates": [],
+  "warnings": [],
   "errors": []
 }
 ```
 
 Allowed labels are:
 
-* `missing`
-* `broken`
-* `thin`
-* `bent`
-* `apparently_intact`
+* `possible_missing`
+* `possible_broken`
 * `uncertain`
 
-The `status` field must be `candidate`.
+Do not use:
 
-Do not describe any result as verified or confirmed.
-
-# Distinguishing defect categories
-
-The generated method should attempt to use the following conceptual distinctions, but it must derive actual measurements from the available data.
-
-## Missing strut candidate
-
-Possible evidence includes:
-
-* little or no material in a region where a strut-like structure is expected
-* absence persists across multiple consecutive slices
-* no connected component follows the expected path
-* geometry-based absence only when registered JSON is available
-
-Do not infer a missing strut solely because one slice has no visible material.
-
-## Broken strut candidate
-
-Possible evidence includes:
-
-* material exists on both sides of a gap
-* connected components terminate near each other
-* continuity is lost across slices
-* no connected path spans the candidate structure
-* expected endpoint regions are not connected when registered geometry is available
-
-Distinguish broken from missing by the presence of partial strut material.
-
-## Thin strut candidate
-
-Possible evidence includes:
-
-* continuity remains
-* local width, radius, area, or volume is smaller than comparable structures
-* reduced thickness persists across multiple slices
-* the measurement is an outlier relative to nearby or similarly oriented structures
-
-Do not use a single global hardcoded width threshold.
-
-## Bent strut candidate
-
-Possible evidence includes:
-
-* a connected centerline exists
-* the centerline deviates from a straight or expected path
-* curvature or tortuosity is unusually large
-* the observed path shifts laterally across slices
-* the deviation is large relative to comparable structures
-
-Do not classify a naturally tilted or diagonally oriented strut as bent solely because it is not vertical or horizontal.
-
-# Unsupervised reference estimation
+* confirmed_missing
+* confirmed_broken
+* ground_truth
+* true_positive
+* false_positive
 
 There is no labeled data.
 
-The generated detector must estimate reference behavior from the current stack or from other available unlabeled stacks.
+# Required script outputs
 
-Support unsupervised reference approaches such as:
+For each processed slice, save:
 
-* median feature values
-* median absolute deviation
-* robust z-scores
-* interquartile range
-* percentile thresholds
-* clustering
-* isolation forest
-* local neighborhood comparisons
-* comparison among structures with similar orientation
-* comparison among structures with similar apparent size
-* comparison across adjacent slices
-* consensus across multiple stacks
+* original grayscale slice
+* normalized slice
+* segmentation mask
+* cleaned mask
+* connected-component visualization
+* skeleton image if used
+* inferred lattice structure visualization
+* candidate bounding-box overlay
+* candidate mask overlay
+* detected endpoints or gaps if used
+* measurement CSV
+* detection JSON
+* execution log
+* warnings and errors
 
-Do not assume that the majority of every individual stack is defect-free unless explicitly recorded as an assumption.
+Overlays should contain:
 
-Prefer pooling measurements across multiple stacks when the experiment configuration enables it.
+* slice index
+* candidate ID
+* possible missing, possible broken, or uncertain
+* confidence
+* relevant measurement values
 
-Implement two modes:
+# Agent 2 development and testing
 
-## Per-stack mode
+Provide Agent 2 with a configurable small subset of slices for implementation testing.
 
-Reference statistics are estimated only from the current seven-slice stack.
+For example:
 
-## Global-unlabeled mode
+```yaml
+development:
+  slice_indices:
+    - 100
+    - 200
+    - 300
+```
 
-Reference statistics are estimated from a configurable collection of unlabeled stacks.
+These are unlabeled development slices.
 
-Global-unlabeled mode must:
+They must not be described as intact or defective.
 
-1. extract features from selected stacks
-2. build a reference feature table
-3. compute robust distributions
-4. save the reference statistics
-5. apply the same reference statistics to all compared conditions when possible
+Agent 2 should:
 
-Do not allow condition-specific reference datasets to create an unfair comparison unless clearly recorded.
+1. Generate `detector.py`.
+2. Run it on the development slices.
+3. Fix syntax and runtime errors.
+4. Check that output files are created.
+5. Check for empty or full segmentation masks.
+6. Check for unreasonable component counts.
+7. Check for invalid bounding boxes.
+8. Check for NaN or infinite measurements.
+9. Save implementation notes.
+10. Avoid tuning against manually known defect locations.
 
-# Geometry adapter
+Agent 2 does not need to visually inspect output overlays.
 
-Inspect the actual JSON file rather than assuming fixed key names.
+The overlays are intended for later researcher review and auditing.
 
-Implement a geometry adapter that attempts to identify:
+# Agent 2 implementation report
 
-* strut records
-* junction records
-* strut IDs
-* junction IDs
-* endpoint IDs
-* endpoint coordinates
-* x, y, and z coordinate ordering
-* voxel coordinates
-* physical coordinates
-* units
-* voxel spacing
-* orientation metadata
-* slice references
-
-Save a normalized geometry file.
-
-Use a normalized structure similar to:
+Require Agent 2 to save:
 
 ```json
 {
-  "metadata": {
-    "coordinate_order": "xyz",
-    "units": "unknown",
-    "registered_to_tiff": false
-  },
-  "junctions": [
+  "implemented_vlm_instructions": [],
+  "modified_vlm_instructions": [],
+  "unsupported_vlm_instructions": [],
+  "implemented_paper_methods": [
     {
-      "junction_id": "j_001",
-      "x": 0.0,
-      "y": 0.0,
-      "z": 0.0
+      "description": "",
+      "paper_page": "",
+      "implementation_location": ""
     }
   ],
-  "struts": [
-    {
-      "strut_id": "s_001",
-      "junction_ids": ["j_001", "j_002"],
-      "endpoint_a": [0.0, 0.0, 0.0],
-      "endpoint_b": [1.0, 1.0, 1.0]
-    }
-  ]
+  "rejected_paper_methods": [],
+  "added_assumptions": [],
+  "threshold_methods": [],
+  "known_limitations": [],
+  "development_run_results": []
 }
 ```
 
-Do not fabricate missing values.
+# Controller responsibilities
 
-Use `null` for unavailable values.
+Implement a normal Python controller.
 
-Add this required configuration field:
+Do not use a third AI agent.
 
-```yaml
-geometry_registered_to_tiff: false
-```
+The controller must:
 
-When `false`:
+1. Load the configuration.
+2. Extract the representative TIFF slice.
+3. Save the slice in the Agent 1 input directory.
+4. Call Agent 1 with the slice.
+5. Validate Agent 1's JSON.
+6. Extract relevant text from the local research-paper PDF.
+7. Build Agent 2's text-only input package.
+8. Verify that no image is included in the Agent 2 prompt or attachments.
+9. Launch the Codex subagent.
+10. Instruct it to generate and test `detector.py`.
+11. Save all generated code and implementation notes.
+12. Optionally run the completed detector across selected TIFF slices.
+13. Record failures without deleting prior outputs.
 
-* state clearly in prompts that coordinates are not aligned
-* do not create JSON overlays on CT slices
-* do not crop geometry by image coordinates
-* do not assign detections to strut IDs spatially
+# Information boundaries
 
-When `true`:
+Enforce the following boundaries:
 
-* allow geometry near the current seven-slice z-range to be selected
-* include only relevant struts and junctions
-* record the geometry filtering method
+## Agent 1 receives
 
-# Segmentation handling
+* one representative CT slice
+* slice metadata
+* target categories: missing and broken
 
-Support:
+## Agent 1 does not receive
 
-* a multi-page binary-mask TIFF
-* a directory containing one mask per slice
-* optional on-the-fly segmentation when no masks are provided
+* paper
+* neighboring slices
+* labels
+* researcher annotations
+* Agent 2 outputs
 
-On-the-fly segmentation must be disabled by default.
+## Agent 2 receives
 
-When enabled, support simple unsupervised methods such as:
+* Agent 1's validated textual JSON
+* paper excerpts
+* TIFF metadata
+* dataset paths for script execution
+* available-library information
+* development slice indices
+* project requirements
 
-* Otsu thresholding
-* adaptive thresholding
-* percentile thresholding
-* morphological cleanup
+## Agent 2 does not receive
 
-Do not describe an automatically generated mask as ground truth.
+* the representative slice as a prompt image
+* manual labels
+* defect coordinates
+* researcher-written image observations
+* ground truth
 
-Record:
+Agent 2 may load TIFF slices programmatically when executing and debugging the generated script.
 
-* segmentation method
-* parameters
-* foreground fraction
-* connected-component count
-* warnings for empty or nearly full masks
-
-# Paper handling
-
-Do not ask the VLM to browse the internet.
-
-Accept a local PDF or text file.
-
-For PDFs:
-
-* extract text locally
-* preserve page identifiers
-* allow configured page ranges
-* allow keyword-based excerpt selection
-* limit maximum excerpt length
-* save extracted text and selected excerpts
-
-Clearly label paper content as external methodological context.
-
-Do not present paper-derived statements as observations from the current CT images.
-
-Agent 1 must include a page or section reference when it uses a paper-derived idea.
-
-If PDF extraction fails:
-
-* record the failure
-* continue without paper context only when configured to do so
-* otherwise mark paper conditions as failed
-
-# Agent 2 code execution
-
-Run generated code inside a separate output directory for each:
-
-* condition
-* center slice
-* run attempt
-
-Use a directory structure such as:
-
-```text
-outputs/
-└── condition_name/
-    └── center_000100/
-        ├── manifest.json
-        ├── prompts/
-        ├── agent1/
-        ├── agent2/
-        ├── generated_code/
-        ├── execution/
-        ├── measurements/
-        ├── overlays/
-        └── intermediate/
-```
-
-Apply a configurable execution timeout.
-
-Restrict generated code so it cannot:
-
-* access the network
-* install packages
-* delete files
-* write outside the output directory
-* execute arbitrary shell commands
-* access unrelated repository files
-* inspect other condition outputs
-
-At minimum, inspect generated code before execution for dangerous operations such as:
-
-* `subprocess`
-* `os.system`
-* `shutil.rmtree`
-* network libraries
-* package installation commands
-* writes to absolute paths
-* parent-directory traversal
-* dynamic execution through `eval` or `exec`
-
-Reject unsafe code and save the rejection reason.
-
-A failure for one stack must not stop the overall experiment.
-
-# Ordinary Python experiment loop
-
-Implement the controller using ordinary Python.
-
-Use logic equivalent to:
-
-```text
-for each enabled condition:
-    for each selected center slice:
-        build the seven-slice stack
-        build the permitted condition context
-        create the condition manifest
-        run the leakage check
-        call Agent 1
-        validate Agent 1 output
-        call Agent 2
-        validate and save generated code
-        inspect generated code for unsafe operations
-        execute generated code
-        validate Agent 2 output
-        collect diagnostics and comparison metrics
-```
-
-Do not create a third AI agent.
-
-# Resume and failure handling
-
-Add resume support.
-
-A condition-stack pair is complete only when it has:
-
-* saved manifest
-* Agent 1 validated output
-* Agent 2 generated code
-* code-execution status
-* Agent 2 structured output or a recorded failure
-
-Skip completed runs unless `--force` is supplied.
-
-Record failures independently for:
-
-* stack construction
-* missing condition inputs
-* leakage check
-* VLM request
-* invalid Agent 1 JSON
-* code generation
-* unsafe generated code
-* timeout
-* runtime exception
-* invalid Agent 2 output
-
-Continue after failures.
-
-# Evaluation without labels
-
-There is no labeled dataset.
-
-Do not compute:
-
-* precision
-* recall
-* F1 score
-* accuracy
-* confusion matrix
-* true positives
-* false positives
-* false negatives
-
-Instead, compare conditions using label-free measures.
-
-Create one summary row per condition and center-slice stack containing:
-
-* condition
-* center slice
-* Agent 1 request success
-* Agent 1 schema-valid output
-* Agent 2 request success
-* generated-code safety status
-* generated-code execution success
-* runtime
-* token usage
-* estimated request cost
-* number of direct observations
-* number of inferred observations
-* number of assumptions
-* number of measurable tests
-* number of preprocessing steps
-* number of features proposed
-* number of classification rules
-* number of uncertainty rules
-* number of instructions implemented
-* number of instructions partially implemented
-* number of unsupported instructions
-* number of Agent 2 assumptions
-* number of detections by category
-* number of uncertain candidates
-* percentage of candidates classified as uncertain
-* number of intermediate outputs generated
-* number of runtime warnings
-* number of execution errors
-
-# Instruction-quality comparison
-
-Programmatically compare Agent 1 outputs across conditions.
-
-Measure:
-
-* specificity of instructions
-* number of executable operations
-* number of measurable quantities
-* number of adaptive thresholds
-* number of unexplained hardcoded thresholds
-* number of unsupported assumptions
-* whether uncertainty is explicitly handled
-* whether cross-slice evidence is used
-* whether candidate localization is described
-* whether strut-level identity is possible
-* whether geometry alignment limitations are acknowledged
-* whether paper-derived ideas are cited
-* percentage of instructions successfully implemented by Agent 2
-
-Do not use another VLM as the sole evaluator.
-
-Use deterministic text and structure checks where possible.
-
-# Cross-condition consistency
-
-Because no labels exist, implement consistency analysis.
-
-For the same center slice across conditions, compare:
-
-* number of candidates
-* spatial overlap of candidates
-* predicted category agreement
-* confidence differences
-* uncertainty differences
-* feature differences
-* whether JSON context causes strut IDs to be assigned
-* whether segmentation changes detected regions
-* whether paper context changes algorithm complexity
-* whether full context reduces uncertainty
-
-Use bounding-box intersection-over-union or mask overlap when available.
-
-Do not assume that agreement means correctness.
-
-Describe agreement only as cross-condition consistency.
-
-# Repeated-run stability
-
-Support repeated VLM runs using different random seeds or temperatures.
-
-For repeated runs of the same condition and stack, compare:
-
-* Agent 1 instruction overlap
-* selected features
-* proposed thresholds
-* generated algorithm structure
-* number and location of candidates
-* predicted categories
-* confidence values
-* uncertainty values
-
-Report instability when results vary substantially.
-
-Do not interpret stability as proof of correctness.
-
-# Visual diagnostic outputs
-
-Save overlays for every successful run.
-
-Overlays should include, when available:
-
-* slice index
-* center-slice indicator
-* candidate bounding boxes
-* candidate masks
-* candidate ID
-* predicted category
-* confidence
-* uncertainty marker
-* observed centerline
-* measured width regions
-* detected gaps
-* expected JSON path only when permitted and registered
-* strut ID only when validly associated
-
-Also create:
-
-* a seven-slice result contact sheet
-* per-candidate crops
-* feature tables
-* distribution plots for widths, areas, curvature, and occupancy
-* comparison plots across conditions
-* uncertainty summaries
-
-Do not use manual annotations.
+This does not mean Agent 2 visually inspects them.
 
 # Project structure
 
-Create a project structure similar to:
+Create a structure similar to:
 
 ```text
-vlm_defect_ablation/
+vlm_strut_method_generation/
 ├── README.md
 ├── pyproject.toml
 ├── config.example.yaml
 ├── schemas/
-│   ├── agent1_output.schema.json
-│   └── agent2_output.schema.json
+│   ├── agent1_observations.schema.json
+│   └── detector_output.schema.json
 ├── prompts/
 │   ├── agent1_system.txt
 │   ├── agent1_user_template.txt
-│   ├── agent2_system.txt
-│   ├── agent2_user_template.txt
-│   └── conditions/
-│       ├── images_only.txt
-│       ├── images_segmentation.txt
-│       ├── images_geometry.txt
-│       ├── images_segmentation_geometry.txt
-│       ├── images_paper.txt
-│       └── full_context.txt
+│   └── agent2_codex_prompt.txt
+├── agents/
+│   └── strut_detector_builder.toml
 ├── src/
 │   ├── __init__.py
 │   ├── cli.py
 │   ├── config.py
-│   ├── paths.py
 │   ├── tiff_loader.py
-│   ├── stack_builder.py
-│   ├── contact_sheet.py
-│   ├── segmentation_loader.py
-│   ├── geometry_adapter.py
-│   ├── paper_extractor.py
-│   ├── condition_builder.py
-│   ├── manifest.py
-│   ├── leakage_check.py
+│   ├── slice_exporter.py
 │   ├── vlm_client.py
 │   ├── agent1.py
-│   ├── agent2.py
 │   ├── schema_validation.py
-│   ├── code_safety.py
-│   ├── code_runner.py
-│   ├── reference_statistics.py
-│   ├── consistency_analysis.py
-│   ├── stability_analysis.py
-│   ├── reporting.py
-│   └── experiment.py
+│   ├── paper_extractor.py
+│   ├── agent2_input_builder.py
+│   ├── codex_subagent_runner.py
+│   ├── detector_runner.py
+│   └── reporting.py
+├── detector/
+│   ├── detector.py
+│   └── implementation_report.json
 ├── tests/
 └── outputs/
 ```
 
-# VLM interface
-
-Keep provider-specific code behind a common interface.
-
-Support at minimum:
-
-```python
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
-
-
-@dataclass
-class VLMResponse:
-    text: str
-    model: str
-    usage: dict[str, Any] | None
-    cost: float | None
-    raw_response: dict[str, Any] | None
-
-
-class VLMClient:
-    def generate(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        images: list[Path],
-        response_schema: dict[str, Any] | None = None,
-        seed: int | None = None,
-    ) -> VLMResponse:
-        raise NotImplementedError
-```
-
-Use environment variables for API keys.
-
-Never commit credentials.
-
-Add a mock VLM client for tests and dry runs.
-
 # Configuration
 
-Create `config.example.yaml` containing fields similar to:
+Create `config.example.yaml` similar to:
 
 ```yaml
 data:
   tiff_path: path/to/scan.tif
-  segmentation_path: null
-  geometry_json_path: null
-  paper_path: null
+  paper_path: path/to/relevant_paper.pdf
   output_dir: outputs
+
+representative_slice:
+  index: 100
+  preserve_full_resolution: true
+  export_format: png
 
 volume:
   expected_slice_count: 761
@@ -1242,54 +842,47 @@ volume:
     y: null
     z: null
 
-stacks:
-  size: 7
-  stride: 1
-  center_slices: []
-  random_count: null
-  random_seed: 42
-  preserve_full_resolution: true
-  contact_sheet_max_dimension: 2048
-
-geometry:
-  registered_to_tiff: false
-  transform_path: null
-
 paper:
   pages: []
-  keywords: []
-  maximum_excerpt_characters: 12000
+  keywords:
+    - lattice
+    - strut
+    - missing strut
+    - broken strut
+    - computed tomography
+    - segmentation
+    - connectivity
+  maximum_excerpt_characters: 16000
 
-experiment:
-  conditions:
-    - images_only
-    - images_segmentation
-    - images_geometry
-    - images_segmentation_geometry
-    - images_paper
-    - full_context
-  repeats: 1
-  force: false
-  continue_on_error: true
-  reference_mode: per_stack
-
-vlm:
+agent1:
   provider: configurable
   model: configurable
   temperature: 0.2
   max_tokens: 6000
   timeout_seconds: 180
 
-execution:
-  timeout_seconds: 120
-  allow_network: false
-  allow_package_installation: false
-  allow_shell_commands: false
+agent2:
+  type: codex_subagent
+  subagent_name: strut_detector_builder
+  timeout_seconds: 900
+
+development:
+  slice_indices:
+    - 100
+    - 200
+    - 300
+
+detector_execution:
+  slice_indices: []
+  slice_start: null
+  slice_end: null
+  continue_on_error: true
+  overwrite: false
 ```
 
-Validate the configuration before running.
+Use environment variables for API credentials.
 
-Skip conditions whose required inputs are unavailable, but report exactly why they were skipped.
+Do not commit credentials.
 
 # Command-line interface
 
@@ -1297,139 +890,127 @@ Provide commands similar to:
 
 ```bash
 python -m src.cli inspect-data --config config.yaml
-python -m src.cli build-stacks --config config.yaml
-python -m src.cli inspect-geometry --config config.yaml
-python -m src.cli extract-paper --config config.yaml
+
+python -m src.cli export-representative-slice --config config.yaml
+
 python -m src.cli run-agent1 --config config.yaml
+
+python -m src.cli extract-paper --config config.yaml
+
+python -m src.cli build-agent2-input --config config.yaml
+
 python -m src.cli run-agent2 --config config.yaml
-python -m src.cli run-experiment --config config.yaml
-python -m src.cli analyze-consistency --config config.yaml
-python -m src.cli analyze-stability --config config.yaml
-python -m src.cli create-report --config config.yaml
-```
 
-Support a small initial experiment:
-
-```bash
-python -m src.cli run-experiment \
+python -m src.cli run-detector \
   --config config.yaml \
-  --center-slices 100 200 300 \
-  --conditions images_only images_segmentation full_context
+  --slice-indices 100 200 300
+
+python -m src.cli run-full-workflow --config config.yaml
 ```
 
-Support a single-stack debug run:
+# Testing requirements
 
-```bash
-python -m src.cli run-experiment \
-  --config config.yaml \
-  --center-slices 100 \
-  --conditions images_only \
-  --force
-```
+Add tests for:
 
-# Tests
-
-Add unit tests for:
-
-* loading the multi-page TIFF
-* confirming the expected number of slices
-* creating seven-slice stacks
-* boundary handling
-* producing 755 valid stacks from 761 slices
-* preserving slice order
-* contact-sheet labels
-* condition-specific file inclusion
-* prohibited-context leakage
-* independent prompts across conditions
-* segmentation loading
-* geometry normalization
-* unregistered-geometry behavior
-* paper excerpt extraction
+* loading a multi-page TIFF
+* confirming the expected slice count
+* exporting exactly one representative slice
+* preserving original slice dimensions
 * Agent 1 schema validation
 * Agent 1 repair behavior
-* Agent 2 schema validation
-* unsafe generated-code rejection
-* path traversal rejection
-* execution timeout
-* missing dependency handling
-* failure isolation
-* resume behavior
-* mocked VLM requests
-* repeated-run stability calculations
-* bounding-box consistency calculations
-* no labeled-data requirements
+* local PDF text extraction
+* page-reference preservation
+* paper keyword excerpt selection
+* Agent 2 input containing Agent 1 observations
+* Agent 2 input containing paper excerpts
+* Agent 2 input containing no image attachments
+* Agent 2 prompt containing no embedded image data
+* generated `detector.py` existence
+* detector command-line argument parsing
+* single-slice detector execution
+* multiple-slice detector execution
+* output JSON validation
+* missing and broken as the only defect categories
+* no supervised-learning requirement
+* empty segmentation handling
+* execution failure isolation
+* output directory safety
 
-Unit tests must not require live API calls.
+Unit tests must not require live VLM or Codex calls.
+
+Use mocked Agent 1 and Agent 2 outputs for tests.
 
 # README requirements
 
 The README must explain:
 
-* the purpose of the experiment
-* the two-agent architecture
-* why no orchestrator agent is used
-* the six context conditions
-* how seven-slice stacks are constructed
-* why seven slices provide only local evidence
-* how to configure TIFF, masks, JSON, and paper inputs
-* how context leakage is prevented
-* how Agent 1 differs from Agent 2
-* how generated code is restricted
-* how unsupervised reference statistics are estimated
-* how conditions are compared without labels
-* why agreement does not prove correctness
-* why stability does not prove correctness
-* how to inspect all prompts and manifests
-* how to run a three-stack test
-* how to resume failed experiments
-* known limitations of VLM-generated image-processing methods
+* the research motivation
+* that Agent 1 replaces initial human visual inspection
+* that Agent 1 receives one representative slice
+* that Agent 2 is text-only during method generation
+* that Agent 2 receives Agent 1's observations and a research paper
+* that Agent 2 generates a reusable detector
+* that the generated script later processes TIFF images
+* the difference between Agent 2 receiving an image and the generated script receiving an image
+* why missing-strut detection requires estimating expected lattice locations
+* why broken-strut detection requires detecting partial material and localized gaps
+* why single-slice evidence cannot confirm a 3D defect
+* why outputs are unverified candidates
+* how to select the representative slice
+* how to upload and configure the paper
+* how to run the complete workflow
+* how to inspect Agent 1's observations
+* how to inspect Agent 2's implementation report
+* how to run the generated detector across slices
+* limitations caused by having no labeled data
 
 # Implementation order
 
 Implement in this order:
 
-1. Inspect the existing repository and input-file formats.
-2. Create the project structure.
-3. Implement configuration loading and validation.
-4. Implement TIFF loading.
-5. Implement seven-slice stack generation.
-6. Implement contact-sheet generation.
-7. Implement segmentation loading.
-8. Implement JSON geometry normalization.
-9. Implement paper extraction.
-10. Implement condition-specific context building.
-11. Implement manifests and leakage checks.
-12. Implement the VLM client interface and mock client.
-13. Implement Agent 1 prompts and schema validation.
-14. Implement Agent 2 prompts and schema validation.
-15. Implement generated-code safety checks.
-16. Implement restricted code execution.
-17. Implement the ordinary Python experiment loop.
-18. Implement resume and failure isolation.
-19. Implement label-free comparison metrics.
-20. Implement cross-condition consistency analysis.
-21. Implement repeated-run stability analysis.
-22. Implement reports and visual diagnostics.
-23. Add unit tests.
-24. Write the README.
-25. Run all tests.
-26. Perform a complete dry run using mocked VLM responses.
+1. Inspect the existing repository.
+2. Inspect the TIFF format and metadata.
+3. Inspect the uploaded PDF format.
+4. Create the project structure.
+5. Implement configuration loading.
+6. Implement TIFF slice extraction.
+7. Implement Agent 1 prompt and output schema.
+8. Implement Agent 1 VLM call.
+9. Implement local paper extraction.
+10. Implement Agent 2 text-only input construction.
+11. Verify that Agent 2 receives no image attachment.
+12. Create the Codex subagent configuration.
+13. Implement the Codex subagent runner.
+14. Have Agent 2 generate `detector.py`.
+15. Have Agent 2 test and repair the script on unlabeled development slices.
+16. Implement detector-output validation.
+17. Implement the detector execution CLI.
+18. Add tests.
+19. Write the README.
+20. Perform a mocked end-to-end dry run.
 
-Begin by inspecting the repository and the actual structure of the TIFF, optional segmentation data, JSON file, and paper files.
+Do not modify unrelated repository files.
 
-Do not assume that optional files exist.
+Do not introduce thin- or bent-strut detection.
 
-Do not alter unrelated repository files.
+Do not introduce labeled-data requirements.
+
+Do not create a third agent.
 
 At completion, report:
 
 * files created
 * files modified
+* Agent 1 output location
+* extracted paper location
+* Agent 2 input location
+* generated detector location
+* implementation-report location
 * tests run
 * tests passed
 * tests failed
-* dry-run results
-* unavailable optional inputs
+* mocked dry-run result
 * unresolved assumptions
-* any safety limitations
-* the exact command for a small live experiment using three center slices
+* exact command for running Agent 1
+* exact command for generating the detector
+* exact command for running the detector on selected slices
