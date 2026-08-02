@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "structural-mechanics-report.schema.json",
+  "title": "Lattice Structural Mechanics Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "request_id",
+    "revision",
+    "created_at",
+    "status",
+    "execution",
+    "observations",
+    "hypotheses",
+    "solver_results",
+    "validation_checks",
+    "interpretations",
+    "uncertainties_and_limitations",
+    "recommended_next_action"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "report_id": { "$ref": "#/$defs/nonemptyString" },
+    "request_id": { "$ref": "#/$defs/nonemptyString" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["complete", "provisional", "failed", "unsupported"] },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["solver", "solver_version", "selected_fidelity", "started_at", "completed_at", "resolved_inputs", "configuration"],
+      "properties": {
+        "solver": { "$ref": "#/$defs/nonemptyString" },
+        "solver_version": { "$ref": "#/$defs/nonemptyString" },
+        "selected_fidelity": {
+          "enum": [
+            "graph_screening",
+            "beam_finite_element",
+            "solid_local_submodel",
+            "nonlinear_buckling_or_collapse",
+            "fatigue_or_damage",
+            "unsupported"
+          ]
+        },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "completed_at": { "type": ["string", "null"], "format": "date-time" },
+        "resolved_inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/artifactReference" }
+        },
+        "configuration": { "type": "object", "additionalProperties": true },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidenceStatement" }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "source_ids", "disposition"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonemptyString" },
+          "statement": { "$ref": "#/$defs/nonemptyString" },
+          "source_ids": { "type": "array", "items": { "type": "string" } },
+          "disposition": { "enum": ["supported", "rejected", "unresolved", "not_tested"] }
+        }
+      }
+    },
+    "solver_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "quantity", "value", "unit", "load_case_id", "source_artifact", "validation_status"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonemptyString" },
+          "quantity": { "$ref": "#/$defs/nonemptyString" },
+          "value": {
+            "oneOf": [
+              { "type": "number" },
+              { "type": "array", "items": { "type": "number" } },
+              { "type": "object", "additionalProperties": true },
+              { "type": "null" }
+            ]
+          },
+          "unit": { "type": ["string", "null"] },
+          "load_case_id": { "type": ["string", "null"] },
+          "region": { "type": ["string", "null"] },
+          "source_artifact": { "$ref": "#/$defs/artifactReference" },
+          "validation_status": { "enum": ["passed", "failed", "not_checked"] }
+        }
+      }
+    },
+    "validation_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "check", "status", "evidence"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonemptyString" },
+          "check": { "$ref": "#/$defs/nonemptyString" },
+          "status": { "enum": ["passed", "failed", "not_applicable", "not_checked"] },
+          "evidence": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "interpretations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "observation_ids", "hypothesis_ids", "result_ids", "validation_check_ids", "scope"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonemptyString" },
+          "statement": { "$ref": "#/$defs/nonemptyString" },
+          "observation_ids": { "type": "array", "items": { "type": "string" } },
+          "hypothesis_ids": { "type": "array", "items": { "type": "string" } },
+          "result_ids": { "type": "array", "items": { "type": "string" } },
+          "validation_check_ids": { "type": "array", "items": { "type": "string" } },
+          "scope": { "enum": ["application_specific", "provisional", "application_independent"] }
+        }
+      }
+    },
+    "uncertainties_and_limitations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidenceStatement" }
+    },
+    "recommended_next_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "reason"],
+      "properties": {
+        "action": { "enum": ["accept_current_fidelity", "refine_current_fidelity", "escalate_fidelity", "resolve_inputs", "stop"] },
+        "target_fidelity": {
+          "type": ["string", "null"],
+          "enum": [
+            "graph_screening",
+            "beam_finite_element",
+            "solid_local_submodel",
+            "nonlinear_buckling_or_collapse",
+            "fatigue_or_damage",
+            null
+          ]
+        },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "revision_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revision", "timestamp", "reason"],
+        "properties": {
+          "revision": { "type": "integer", "minimum": 1 },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "reason": { "$ref": "#/$defs/nonemptyString" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonemptyString": { "type": "string", "minLength": 1 },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonemptyString" },
+        "checksum": { "type": ["string", "null"] },
+        "role": { "type": ["string", "null"] }
+      }
+    },
+    "evidenceStatement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "source_ids"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonemptyString" },
+        "statement": { "$ref": "#/$defs/nonemptyString" },
+        "source_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

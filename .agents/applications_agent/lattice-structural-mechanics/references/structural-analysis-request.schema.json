@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "structural-analysis-request.schema.json",
+  "title": "Lattice Structural Analysis Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "revision",
+    "created_at",
+    "application_requirements",
+    "analysis_scope",
+    "decision_objective",
+    "geometry",
+    "coordinate_system",
+    "materials",
+    "load_cases",
+    "boundary_conditions",
+    "defects",
+    "observations",
+    "hypotheses",
+    "fidelity",
+    "quantities_of_interest",
+    "validation_requirements",
+    "assumptions",
+    "uncertainties"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "request_id": { "$ref": "#/$defs/nonemptyString" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "generator": { "type": ["string", "null"] },
+    "application_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "status", "schema_version"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonemptyString" },
+        "checksum": { "type": ["string", "null"] },
+        "status": { "enum": ["complete", "incomplete", "conflicting"] },
+        "schema_version": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "analysis_scope": { "enum": ["final", "provisional"] },
+    "decision_objective": { "$ref": "#/$defs/nonemptyString" },
+    "geometry": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifactReference" }
+    },
+    "coordinate_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "length_unit", "axes", "load_axis_mapping"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonemptyString" },
+        "length_unit": { "$ref": "#/$defs/nonemptyString" },
+        "axes": { "$ref": "#/$defs/nonemptyString" },
+        "load_axis_mapping": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "model", "properties", "source"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonemptyString" },
+          "model": { "$ref": "#/$defs/nonemptyString" },
+          "properties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/namedQuantity" }
+          },
+          "source": { "$ref": "#/$defs/nonemptyString" }
+        }
+      }
+    },
+    "load_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/identifiedDefinition" }
+    },
+    "boundary_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/identifiedDefinition" }
+    },
+    "defects": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/identifiedDefinition" }
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/identifiedDefinition" }
+    },
+    "hypotheses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "observation_ids",
+          "mechanism",
+          "expected_response",
+          "applicable_load_case_ids",
+          "confirmation_evidence"
+        ],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonemptyString" },
+          "observation_ids": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/nonemptyString" }
+          },
+          "mechanism": { "$ref": "#/$defs/nonemptyString" },
+          "expected_response": { "$ref": "#/$defs/nonemptyString" },
+          "applicable_load_case_ids": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/nonemptyString" }
+          },
+          "alternative_explanations": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/nonemptyString" }
+          },
+          "confirmation_evidence": { "$ref": "#/$defs/nonemptyString" }
+        }
+      }
+    },
+    "fidelity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selected", "justification", "lower_fidelity_rejection", "higher_fidelity_deferral"],
+      "properties": {
+        "selected": {
+          "enum": [
+            "graph_screening",
+            "beam_finite_element",
+            "solid_local_submodel",
+            "nonlinear_buckling_or_collapse",
+            "fatigue_or_damage",
+            "unsupported"
+          ]
+        },
+        "justification": { "$ref": "#/$defs/nonemptyString" },
+        "lower_fidelity_rejection": { "type": "array", "items": { "type": "string" } },
+        "higher_fidelity_deferral": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "solver_requirements": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "quantities_of_interest": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "quantity", "unit", "load_case_ids"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonemptyString" },
+          "quantity": { "$ref": "#/$defs/nonemptyString" },
+          "unit": { "type": ["string", "null"] },
+          "load_case_ids": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/nonemptyString" }
+          },
+          "region": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "validation_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/identifiedDefinition" }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "uncertainties": { "type": "array", "items": { "$ref": "#/$defs/identifiedDefinition" } }
+  },
+  "$defs": {
+    "nonemptyString": { "type": "string", "minLength": 1 },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role", "path", "format", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonemptyString" },
+        "role": { "$ref": "#/$defs/nonemptyString" },
+        "path": { "$ref": "#/$defs/nonemptyString" },
+        "format": { "$ref": "#/$defs/nonemptyString" },
+        "checksum": { "type": ["string", "null"] },
+        "provenance": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "namedQuantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "unit"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonemptyString" },
+        "value": { "type": "number" },
+        "unit": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "identifiedDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonemptyString" },
+        "description": { "$ref": "#/$defs/nonemptyString" },
+        "source": { "type": ["string", "null"] },
+        "parameters": { "type": "object", "additionalProperties": true }
+      }
+    }
+  }
+}

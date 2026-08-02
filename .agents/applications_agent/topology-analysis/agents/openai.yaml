@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lattice Topology Analysis"
+  short_description: "Measure lattice connectivity and redundancy"
+  default_prompt: "Use $topology-analysis to validate lattice connectivity, degree, bridges, and defect-tolerance screening from graph artifacts."

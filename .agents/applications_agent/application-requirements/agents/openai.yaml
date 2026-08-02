@@ -1,0 +1,4 @@
+interface:
+  display_name: "Application Requirements"
+  short_description: "Capture application context before defect analysis"
+  default_prompt: "Use $application-requirements to create a validated application_requirements.json before analyzing defect criticality."

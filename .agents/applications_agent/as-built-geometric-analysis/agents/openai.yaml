@@ -1,0 +1,4 @@
+interface:
+  display_name: "As-Built Geometry Analysis"
+  short_description: "Measure CT-derived lattice geometry"
+  default_prompt: "Use $as-built-geometric-analysis to measure and validate as-built lattice geometry from graph, measurement, and mask artifacts."

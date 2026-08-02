@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 from typing import Any, Callable
 
@@ -50,6 +51,14 @@ VISUALIZATION_SCRIPT = (
     / "scripts"
     / "generate_visualization.py"
 )
+SURFACE_EXPORT_SCRIPT = (
+    PROJECT_ROOT
+    / ".agents"
+    / "skills"
+    / "visualization-expert"
+    / "scripts"
+    / "export_ct_surface.py"
+)
 
 
 def _load_visualization_module():
@@ -71,7 +80,27 @@ def _load_visualization_module():
     return module
 
 
+def _load_surface_export_module():
+    """Load the tested CT surface exporter relative to this repository."""
+    if not SURFACE_EXPORT_SCRIPT.is_file():
+        raise RuntimeError(
+            f"CT surface exporter does not exist: {SURFACE_EXPORT_SCRIPT}"
+        )
+    specification = importlib.util.spec_from_file_location(
+        "llnl_ct_surface_exporter",
+        SURFACE_EXPORT_SCRIPT,
+    )
+    if specification is None or specification.loader is None:
+        raise RuntimeError(
+            f"Unable to load CT surface exporter: {SURFACE_EXPORT_SCRIPT}"
+        )
+    module = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(module)
+    return module
+
+
 visualization = _load_visualization_module()
+surface_export = _load_surface_export_module()
 mcp = FastMCP("LLNL Data Science Challenge Tools")
 
 
@@ -347,17 +376,21 @@ def inspect_visualization_input(input_filepath: str) -> dict[str, Any]:
             "warnings": [],
         }
         if suffix in visualization.TIFF_SUFFIXES:
+            metadata = visualization.inspect_tiff(source)
+            supported = [
+                "histogram",
+                "slice",
+                "orthogonal",
+                "slice_trend",
+                "overlay",
+                "compare_mask",
+            ]
+            if len(metadata["shape"]) == 3:
+                supported.append("ct_as_built_surface")
             result.update({
                 "input_type": "tiff",
-                **visualization.inspect_tiff(source),
-                "supported_visualizations": [
-                    "histogram",
-                    "slice",
-                    "orthogonal",
-                    "slice_trend",
-                    "overlay",
-                    "compare_mask",
-                ],
+                **metadata,
+                "supported_visualizations": supported,
             })
         elif suffix == ".npy":
             array = np.load(source, allow_pickle=False, mmap_mode="r")
@@ -433,6 +466,66 @@ def inspect_visualization_input(input_filepath: str) -> dict[str, Any]:
             "error": str(error),
             "warnings": [],
         }
+
+
+@mcp.tool()
+def export_ct_as_built_surface(
+    mask_filepath: str,
+    output_filepath: str,
+    preview_filepath: str,
+    voxel_size_x: float,
+    voxel_size_y: float,
+    voxel_size_z: float,
+    units: str = "mm",
+    mask_threshold: float | None = None,
+    slab_depth: int = 48,
+    slab_overlap: int = 1,
+    minimum_component_voxels: int = 0,
+    target_face_count: int | None = None,
+    metrics_filepath: str | None = None,
+    manifest_filepath: str | None = None,
+    validation_report_filepath: str | None = None,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """
+    Export a 3D segmentation mask as a CT-derived as-built STL surface.
+
+    The preview is required and is rendered from the reloaded STL. Voxel sizes
+    use XYZ order even though TIFF arrays are interpreted as ZYX.
+    """
+    try:
+        item = surface_export.export_ct_surface(
+            mask_filepath=mask_filepath,
+            output_filepath=output_filepath,
+            preview_filepath=preview_filepath,
+            voxel_size_xyz=(voxel_size_x, voxel_size_y, voxel_size_z),
+            units=units,
+            mask_threshold=mask_threshold,
+            slab_depth=slab_depth,
+            slab_overlap=slab_overlap,
+            minimum_component_voxels=minimum_component_voxels,
+            target_face_count=target_face_count,
+            metrics_filepath=metrics_filepath,
+            overwrite=overwrite,
+        )
+        visualization.attach_validation(item, validation_report_filepath)
+        visualization.update_manifest(manifest_filepath, item)
+        return item
+    except ImportError as error:
+        return {
+            "status": "blocked_environment",
+            "visualization_type": "ct_as_built_surface",
+            "input_paths": [
+                str(Path(mask_filepath).expanduser().resolve()),
+            ],
+            "output_path": None,
+            "interpreter": sys.executable,
+            "dependency": getattr(error, "name", None),
+            "error": str(error),
+            "warnings": [],
+        }
+    except Exception as error:
+        return _visualization_error("ct_as_built_surface", error)
 
 
 @mcp.tool()

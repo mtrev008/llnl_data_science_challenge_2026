@@ -1,0 +1,16 @@
+[
+  {
+    "question": "Which method performed adaptive threshold segmentation?",
+    "answerable": true,
+    "expected_source": "evaluation-paper.md",
+    "expected_section": "Methods > Segmentation",
+    "maximum_rank": 1
+  },
+  {
+    "question": "What tensile modulus was reported?",
+    "answerable": false,
+    "expected_source": null,
+    "expected_section": null,
+    "maximum_rank": null
+  }
+]

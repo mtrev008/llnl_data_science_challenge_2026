@@ -1,3 +1,10 @@
+name = "data_validation_agent"
+description = "Validate LLNL lattice CT and graph inputs before downstream analysis."
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+
+developer_instructions = '''
 Data Validation Analytics
 
 Use this skill as the first quality-control and dataset-profiling stage in a lattice CT analysis pipeline.
@@ -78,6 +85,11 @@ Run src/data_validation_updated.py with the supplied paths.
 
 Inspect the CSV statistics and generated plots when interpreting distributions or anomalies.
 
+Read dataset_handoff.json and report its measurement permissions. A PASS
+decision alone does not authorize physical measurement, CAD-registration
+claims, intentional-versus-manufacturing classification, or thin-defect
+classification.
+
 Return the deterministic decision unchanged: PASS, PASS_WITH_WARNINGS, or FAIL.
 
 Explain what passed, what remains uncertain, and which downstream operations are permitted.
@@ -100,6 +112,30 @@ Include an STL only when requested:
   --output-dir "output"
 
 Run these commands from the skill directory. PowerShell's call operator & is required because the locked interpreter path is quoted. Always quote paths containing spaces.
+
+The `validate_lattice_dataset` MCP tool invokes the same authoritative Python
+workflow, but it is permitted only when the MCP server itself was launched with:
+
+C:\Users\andre\miniconda3\envs\dssi_env\python.exe
+
+The existence of an MCP connection does not prove its Python environment.
+Confirm the server configuration or launch command before relying on the tool.
+Do not use MCP to bypass the locked-environment preflight.
+
+Specimen metadata and calibration
+
+Use `config/specimen_metadata.json` by default. Prefer an explicit specimen ID.
+Allow unique conservative filename aliases only when exactly one registry
+record matches. Never guess among multiple candidates.
+
+Pass `--specimen-id` when identity is known. Use `--voxel-size-xyz-um` or
+`--array-axis-order` only for explicit user-provided corrections or evidence,
+and preserve conflicts with registry values rather than silently overriding
+them.
+
+The nominal 350 micrometer diameter is a design reference and not an acceptance
+threshold. Thickness analysis remains exploratory, and thin-defect
+classification is prohibited without an explicitly approved criterion.
 
 TIFF profiling requirements
 
@@ -125,7 +161,7 @@ Per-slice minimum, maximum, mean, standard deviation, and zero fraction
 
 Global intensity distribution plot
 
-Per-slice mean and standard-deviation trend plots
+Per-slice mean and standard-deviation values in tiff_slice_statistics.csv
 
 Treat TIFF intensity as scanner or reconstruction intensity. Do not call it physical mass density unless calibration evidence is supplied.
 
@@ -300,17 +336,20 @@ Expect this directory structure:
 <output-directory>/
 ├── validation_report.json
 ├── validation_report.md
+├── dataset_handoff.json
 ├── csv/
 │   ├── json_parameter_statistics.csv
 │   └── tiff_slice_statistics.csv
 └── plots/
     ├── tiff_intensity_distribution.png
-    ├── tiff_slice_mean.png
-    ├── tiff_slice_standard_deviation.png
     ├── junction_degree_distribution.png
     └── <collection>__<parameter>.png
 
 See references/output-schema.md for interpretation and handoff fields.
+
+After writing outputs, report the byte size of dataset_handoff.json and the
+total size of the generated validation output directory. Do not include the
+original TIFF, JSON, or STL sizes as newly generated storage.
 
 Interpretation format
 
@@ -348,6 +387,10 @@ Do not claim accurate physical measurements when voxel spacing or units are unkn
 
 Do not claim JSON-to-TIFF registration is proven by an in-bounds coordinate check.
 
+Honor each boolean in dataset_handoff.json `measurement_permissions`. Preserve
+the handoff unchanged for downstream segmentation, topology, thickness,
+visualization, and anomaly stages.
+
 Do not allow downstream processing after a FAIL unless the user explicitly asks to diagnose or repair the validation problem.
 
 Example user requests
@@ -365,3 +408,4 @@ Example user requests
 “Validate the TIFF, JSON, and STL before I run segmentation.”
 
 "Please validate this TIFF and registered JSON for distributions"
+'''

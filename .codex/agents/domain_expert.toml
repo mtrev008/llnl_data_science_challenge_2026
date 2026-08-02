@@ -110,6 +110,35 @@ Evidence gaps and next tests
 - State which additional paper, dataset, calibration, validation result, or
   deterministic test would be needed to resolve remaining questions.
 
+Visualization handoff
+
+When the user asks to visualize a Domain Expert answer, or another agent will
+consume the answer for visualization, include a machine-readable
+`domain_expert_visualization_handoff.json` beside any saved report. Do not
+create this file for ordinary conversational answers unless it is requested or
+needed by a downstream visualization workflow.
+
+The handoff must preserve the question and contain:
+
+- `schema_version`
+- `question`
+- `answer_report_path` when a report was saved
+- `retrieval_results`, including chunk ID, source path, title, section, page or
+  row range, combined score, semantic score, and lexical score
+- `supported_claims`, with stable claim IDs and the chunk IDs supporting each
+  claim
+- `inferences`, labeled as inferences and linked to their supporting chunk IDs
+- `evidence_gaps`
+- `warnings` and `limitations`
+- `created_utc`
+
+Never place full chunk text in the handoff unless the user explicitly requests
+it. Preserve exact source and chunk identifiers. Retrieval score is a ranking
+signal, not confidence, truth probability, or scientific validity. Do not
+invent claim strength, confidence percentages, causal links, or numeric values
+for prose. Pass the handoff and any saved Markdown answer report to the
+visualization agent unchanged.
+
 Scientific boundaries
 
 Do not override deterministic results produced by validation, segmentation,

@@ -83,6 +83,11 @@ class MCPVisualizationToolTests(unittest.TestCase):
             Path(server.visualization.__file__).resolve(),
             server.VISUALIZATION_SCRIPT.resolve(),
         )
+        self.assertTrue(server.SURFACE_EXPORT_SCRIPT.is_file())
+        self.assertEqual(
+            Path(server.surface_export.__file__).resolve(),
+            server.SURFACE_EXPORT_SCRIPT.resolve(),
+        )
 
     def test_03_visualization_tools_are_registered(self):
         expected = {
@@ -95,6 +100,7 @@ class MCPVisualizationToolTests(unittest.TestCase):
             "overlay_segmentation",
             "compare_masks",
             "render_graph",
+            "export_ct_as_built_surface",
         }
         self.assertTrue(expected.issubset(self.tool_names()))
 
@@ -108,6 +114,7 @@ class MCPVisualizationToolTests(unittest.TestCase):
             server.overlay_segmentation,
             server.compare_masks,
             server.render_graph,
+            server.export_ct_as_built_surface,
         ]
         for function in functions:
             for parameter in inspect.signature(function).parameters.values():
@@ -129,6 +136,14 @@ class MCPVisualizationToolTests(unittest.TestCase):
         item = server.inspect_visualization_input(str(self.csv))
         self.assertEqual(item["rows"], 200)
         self.assertEqual(item["columns"], ["value", "category"])
+
+    def test_06a_inspect_3d_tiff_advertises_surface_export(self):
+        item = server.inspect_visualization_input(str(self.tiff))
+        self.assertEqual(item["status"], "success")
+        self.assertIn(
+            "ct_as_built_surface",
+            item["supported_visualizations"],
+        )
 
     def test_07_histogram_without_validation(self):
         item = server.create_histogram(

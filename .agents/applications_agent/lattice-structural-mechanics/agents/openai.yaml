@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lattice Structural Mechanics"
+  short_description: "Select and direct lattice mechanics analyses"
+  default_prompt: "Use $lattice-structural-mechanics to translate as-built lattice geometry into testable performance hypotheses and select an appropriate deterministic analysis."

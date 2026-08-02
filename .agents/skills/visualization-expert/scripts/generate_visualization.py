@@ -22,6 +22,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
+from matplotlib.ticker import AutoMinorLocator
 import numpy as np
 import pandas as pd
 import tifffile
@@ -40,6 +41,9 @@ COLORS = {
     "mean": "#E45756",
     "median": "#54A24B",
     "threshold": "#F58518",
+    "axis": "#2F3B45",
+    "major_grid": "#9EABB8",
+    "minor_grid": "#CFD6DE",
 }
 
 
@@ -97,7 +101,23 @@ def select_2d(array: np.ndarray, axis: int, index: int | None) -> tuple[np.ndarr
     return np.take(array, chosen, axis=axis), chosen
 
 
-def numeric_values(path: Path, column: str | None) -> tuple[np.ndarray, dict[str, Any]]:
+def load_json_frame(path: Path, collection: str | None) -> pd.DataFrame:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if collection:
+        records = data.get(collection)
+        if not isinstance(records, list):
+            raise ValueError(
+                f"JSON collection '{collection}' was not found or is not a list"
+            )
+        return pd.json_normalize(records)
+    return pd.json_normalize(data)
+
+
+def numeric_values(
+    path: Path,
+    column: str | None,
+    json_collection: str | None = None,
+) -> tuple[np.ndarray, dict[str, Any]]:
     suffix = path.suffix.lower()
     if suffix == ".npy":
         raw = np.load(path, allow_pickle=False)
@@ -116,12 +136,11 @@ def numeric_values(path: Path, column: str | None) -> tuple[np.ndarray, dict[str
     elif suffix == ".json":
         if not column:
             raise ValueError("--column is required for JSON input")
-        data = json.loads(path.read_text(encoding="utf-8"))
-        frame = pd.json_normalize(data)
+        frame = load_json_frame(path, json_collection)
         if column not in frame:
             raise ValueError(f"Column '{column}' was not found")
         values = pd.to_numeric(frame[column], errors="coerce").to_numpy()
-        info = {"rows": len(frame), "column": column}
+        info = {"rows": len(frame), "column": column, "json_collection": json_collection}
     else:
         raise ValueError("Numeric input must be .npy, .csv, or .json")
     values = np.asarray(values, dtype=float)
@@ -131,6 +150,58 @@ def numeric_values(path: Path, column: str | None) -> tuple[np.ndarray, dict[str
     info["value_count"] = int(finite.size)
     info["discarded_value_count"] = int(values.size - finite.size)
     return finite, info
+
+
+def extra_input_paths(values: list[str] | None) -> list[Path]:
+    paths: list[Path] = []
+    for value in values or []:
+        path = source_path(value)
+        paths.append(path)
+    return paths
+
+
+def apply_axes_style(
+    axis: plt.Axes,
+    style_preset: str,
+    *,
+    numeric_x: bool = True,
+    numeric_y: bool = True,
+) -> None:
+    if style_preset != "classroom":
+        axis.grid(axis="y", alpha=0.25)
+        return
+    axis.set_axisbelow(True)
+    axis.set_facecolor("#FCFCFD")
+    axis.title.set_fontsize(18)
+    axis.title.set_fontweight("bold")
+    axis.xaxis.label.set_fontsize(14)
+    axis.xaxis.label.set_fontweight("bold")
+    axis.yaxis.label.set_fontsize(14)
+    axis.yaxis.label.set_fontweight("bold")
+    axis.tick_params(
+        axis="both",
+        which="major",
+        labelsize=12,
+        width=1.5,
+        length=6,
+        color=COLORS["axis"],
+    )
+    axis.tick_params(
+        axis="both",
+        which="minor",
+        width=0.9,
+        length=3.5,
+        color=COLORS["axis"],
+    )
+    for spine in axis.spines.values():
+        spine.set_linewidth(1.6)
+        spine.set_color(COLORS["axis"])
+    if numeric_x:
+        axis.xaxis.set_minor_locator(AutoMinorLocator(2))
+    if numeric_y:
+        axis.yaxis.set_minor_locator(AutoMinorLocator(2))
+    axis.grid(which="major", color=COLORS["major_grid"], linewidth=0.9, alpha=0.75)
+    axis.grid(which="minor", color=COLORS["minor_grid"], linewidth=0.6, alpha=0.8)
 
 
 def stats(values: np.ndarray) -> dict[str, Any]:
@@ -241,7 +312,8 @@ def save_figure(fig: plt.Figure, path: Path) -> None:
 def result(kind: str, inputs: list[Path], output: Path, parameters: dict[str, Any],
            statistics: dict[str, Any] | None = None,
            warnings: list[str] | None = None,
-           provenance: dict[str, Any] | None = None) -> dict[str, Any]:
+           provenance: dict[str, Any] | None = None,
+           extra_inputs: list[Path] | None = None) -> dict[str, Any]:
     provenance_data = {
         "script": "generate_visualization.py",
         "sampled": False,
@@ -253,7 +325,7 @@ def result(kind: str, inputs: list[Path], output: Path, parameters: dict[str, An
     return {
         "status": "success",
         "visualization_type": kind,
-        "input_paths": [str(path) for path in inputs],
+        "input_paths": [str(path) for path in [*inputs, *(extra_inputs or [])]],
         "output_path": str(output),
         "parameters": parameters,
         "statistics": statistics or {},
@@ -450,6 +522,7 @@ def stream_tiff_histogram(
 def histogram(args: argparse.Namespace) -> dict[str, Any]:
     source = source_path(args.input)
     output = output_path(args.output, args.overwrite)
+    extra_inputs = extra_input_paths(args.extra_input)
     bins: int | str = args.bins
     if args.bins != "auto":
         bins = int(args.bins)
@@ -464,16 +537,31 @@ def histogram(args: argparse.Namespace) -> dict[str, Any]:
             "discarded_value_count": 0,
         }
     else:
-        values, info = numeric_values(source, args.column)
+        values, info = numeric_values(source, args.column, args.json_collection)
         summary = stats(values)
         histogram_provenance = None
     fig, axis = plt.subplots(figsize=(9, 6))
     if is_tiff:
-        axis.stairs(counts, edges, fill=True, color=COLORS["primary"], alpha=0.9)
+        axis.stairs(
+            counts,
+            edges,
+            fill=True,
+            color=COLORS["primary"],
+            alpha=0.88,
+            linewidth=1.4,
+            edgecolor=COLORS["axis"],
+        )
         mean_value = summary["mean"]
         median_value = summary["median"]
     else:
-        axis.hist(values, bins=bins, color=COLORS["primary"], edgecolor="white", alpha=0.9)
+        axis.hist(
+            values,
+            bins=bins,
+            color=COLORS["primary"],
+            edgecolor="white",
+            linewidth=0.8,
+            alpha=0.9,
+        )
         mean_value = float(np.mean(values))
         median_value = float(np.median(values))
     if args.show_mean:
@@ -489,8 +577,10 @@ def histogram(args: argparse.Namespace) -> dict[str, Any]:
         axis.set_yscale("log")
     axis.set(title=args.title or f"Distribution of {args.column or source.stem}",
              xlabel=args.x_label or args.column or "Value",
-             ylabel="Frequency (log scale)" if args.log_count else "Frequency")
-    axis.grid(axis="y", alpha=0.25)
+             ylabel=args.y_label or (
+                 "Frequency (log scale)" if args.log_count else "Frequency"
+             ))
+    apply_axes_style(axis, args.style_preset, numeric_x=True, numeric_y=not args.log_count)
     if args.show_mean or args.show_median or args.threshold is not None:
         axis.legend()
     save_figure(fig, output)
@@ -513,13 +603,14 @@ def histogram(args: argparse.Namespace) -> dict[str, Any]:
         warnings.append(f"Discarded {info['discarded_value_count']} nonfinite values.")
     return result(
         "histogram", [source], output, vars_for(args), summary, warnings,
-        histogram_provenance,
+        histogram_provenance, extra_inputs=extra_inputs,
     )
 
 
 def bar(args: argparse.Namespace) -> dict[str, Any]:
     source = source_path(args.input)
     output = output_path(args.output, args.overwrite)
+    extra_inputs = extra_input_paths(args.extra_input)
     suffix = source.suffix.lower()
     if suffix == ".npy":
         values = np.load(source, allow_pickle=False).reshape(-1)
@@ -529,7 +620,7 @@ def bar(args: argparse.Namespace) -> dict[str, Any]:
             raise ValueError("A valid --column is required for CSV input")
         values = frame[args.column].to_numpy()
     elif suffix == ".json":
-        frame = pd.json_normalize(json.loads(source.read_text(encoding="utf-8")))
+        frame = load_json_frame(source, args.json_collection)
         if not args.column or args.column not in frame:
             raise ValueError("A valid --column is required for JSON input")
         values = frame[args.column].to_numpy()
@@ -539,14 +630,44 @@ def bar(args: argparse.Namespace) -> dict[str, Any]:
     if len(counts) > args.max_categories:
         raise ValueError(f"Found {len(counts)} categories; maximum is {args.max_categories}")
     fig, axis = plt.subplots(figsize=(max(7, len(counts) * 0.55), 6))
-    axis.bar(counts.index, counts.values, color=COLORS["primary"])
+    numeric_index = pd.to_numeric(counts.index, errors="coerce")
+    if np.all(np.isfinite(numeric_index.to_numpy(dtype=float))):
+        order = np.argsort(numeric_index.to_numpy(dtype=float))
+        x_values = numeric_index.to_numpy(dtype=float)[order]
+        y_values = counts.to_numpy(dtype=float)[order]
+        if len(x_values) > 1:
+            widths = np.diff(np.unique(x_values))
+            width = max(0.6, 0.8 * float(np.min(widths))) if widths.size else 0.8
+        else:
+            width = 0.8
+        axis.bar(
+            x_values,
+            y_values,
+            width=width,
+            color=COLORS["primary"],
+            edgecolor=COLORS["axis"],
+            linewidth=0.9,
+        )
+        axis.set_xticks(x_values)
+        numeric_x = True
+    else:
+        axis.bar(
+            counts.index,
+            counts.values,
+            color=COLORS["primary"],
+            edgecolor=COLORS["axis"],
+            linewidth=0.9,
+        )
+        numeric_x = False
     axis.set(title=args.title or f"Counts of {args.column or source.stem}",
-             xlabel=args.x_label or args.column or "Category", ylabel="Count")
+             xlabel=args.x_label or args.column or "Category",
+             ylabel=args.y_label or "Count")
     axis.tick_params(axis="x", rotation=45)
-    axis.grid(axis="y", alpha=0.25)
+    apply_axes_style(axis, args.style_preset, numeric_x=numeric_x, numeric_y=True)
     save_figure(fig, output)
     return result("bar", [source], output, vars_for(args),
-                  {"category_count": len(counts), "counts": counts.to_dict()})
+                  {"category_count": len(counts), "counts": counts.to_dict()},
+                  extra_inputs=extra_inputs)
 
 
 def slice_plot(args: argparse.Namespace) -> dict[str, Any]:
@@ -636,6 +757,7 @@ def orthogonal(args: argparse.Namespace) -> dict[str, Any]:
 def slice_trend(args: argparse.Namespace) -> dict[str, Any]:
     source = source_path(args.input)
     output = output_path(args.output, args.overwrite)
+    extra_inputs = extra_input_paths(args.extra_input)
     if source.suffix.lower() == ".csv":
         frame = pd.read_csv(source)
         if not args.column or args.column not in frame:
@@ -680,16 +802,16 @@ def slice_trend(args: argparse.Namespace) -> dict[str, Any]:
             "statistics_source": "memory_mapped_volume",
         }
     fig, axis = plt.subplots(figsize=(10, 5))
-    axis.plot(x, values, color=COLORS["primary"])
+    axis.plot(x, values, color=COLORS["primary"], linewidth=2.3)
     axis.set(title=args.title or f"Per-slice {args.column or args.metric}",
-             xlabel="Slice index", ylabel=args.column or args.metric)
-    axis.grid(alpha=0.25)
+             xlabel="Slice index", ylabel=args.y_label or args.column or args.metric)
+    apply_axes_style(axis, args.style_preset, numeric_x=True, numeric_y=True)
     save_figure(fig, output)
     finite = np.asarray(values, dtype=float)
     finite = finite[np.isfinite(finite)]
     return result(
         "slice-trend", [source], output, vars_for(args), stats(finite),
-        provenance=trend_provenance,
+        provenance=trend_provenance, extra_inputs=extra_inputs,
     )
 
 
@@ -804,6 +926,7 @@ def compare_mask(args: argparse.Namespace) -> dict[str, Any]:
 def graph(args: argparse.Namespace) -> dict[str, Any]:
     source = source_path(args.input)
     output = output_path(args.output, args.overwrite)
+    extra_inputs = extra_input_paths(args.extra_input)
     data = json.loads(source.read_text(encoding="utf-8"))
     junctions = next((data[key] for key in ("junctions", "nodes", "vertices")
                       if isinstance(data.get(key), list)), None)
@@ -838,17 +961,18 @@ def graph(args: argparse.Namespace) -> dict[str, Any]:
              xlabel=f"coordinate {args.x_dimension}",
              ylabel=f"coordinate {args.y_dimension}")
     axis.set_aspect("equal", adjustable="datalim")
-    axis.grid(alpha=0.2)
+    apply_axes_style(axis, args.style_preset, numeric_x=True, numeric_y=True)
     save_figure(fig, output)
     warnings = [f"Omitted {invalid} edges with invalid endpoints."] if invalid else []
     return result("graph", [source], output, vars_for(args),
                   {"junction_count": len(junctions), "plotted_junction_count": len(positions),
-                   "strut_count": len(struts), "invalid_edge_count": invalid}, warnings)
+                   "strut_count": len(struts), "invalid_edge_count": invalid},
+                  warnings, extra_inputs=extra_inputs)
 
 
 def vars_for(args: argparse.Namespace) -> dict[str, Any]:
     hidden = {"func", "manifest", "output", "input", "image", "mask",
-              "prediction", "truth", "overwrite", "validation_report"}
+              "prediction", "truth", "overwrite", "validation_report", "extra_input"}
     return {key: value for key, value in vars(args).items() if key not in hidden}
 
 
@@ -857,8 +981,10 @@ def common(parser: argparse.ArgumentParser, input_name: str = "input") -> None:
     parser.add_argument("--output", required=True)
     parser.add_argument("--manifest")
     parser.add_argument("--validation-report")
+    parser.add_argument("--extra-input", action="append")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--title")
+    parser.add_argument("--style-preset", choices=("standard", "classroom"), default="standard")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -868,8 +994,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("histogram")
     common(p)
     p.add_argument("--column")
+    p.add_argument("--json-collection")
     p.add_argument("--bins", default="auto")
     p.add_argument("--x-label")
+    p.add_argument("--y-label")
     p.add_argument("--threshold", type=float)
     p.add_argument("--show-mean", action="store_true")
     p.add_argument("--show-median", action="store_true")
@@ -879,7 +1007,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("bar")
     common(p)
     p.add_argument("--column")
+    p.add_argument("--json-collection")
     p.add_argument("--x-label")
+    p.add_argument("--y-label")
     p.add_argument("--max-categories", type=int, default=50)
     p.set_defaults(func=bar)
 
@@ -902,6 +1032,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--column")
     p.add_argument("--axis", type=int, default=0)
     p.add_argument("--metric", choices=("mean", "std"), default="mean")
+    p.add_argument("--y-label")
     p.set_defaults(func=slice_trend)
 
     p = sub.add_parser("overlay")
